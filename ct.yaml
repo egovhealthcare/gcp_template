@@ -1,0 +1,6 @@
+chart-dirs:
+  - helm_charts
+
+chart-repos: []
+
+validate-maintainers: false

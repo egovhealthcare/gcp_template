@@ -1,0 +1,120 @@
+{
+  "project_id": "my-gcp-project",
+  "project_number": "123456789012",
+  "region": "us-central1",
+  "zones": [
+    "us-central1-a",
+    "us-central1-b",
+    "us-central1-c"
+  ],
+  "zone": "us-central1-a",
+
+  "org": "myorg",
+  "app": "myapp",
+  "environment": "staging",
+
+  "web_domain_name": [
+    "app.example.com"
+  ],
+  "api_domain_name": [
+    "api.example.com"
+  ],
+  "metabase_domain_name": [
+    "dashboard.example.com"
+  ],
+  "dicom_domain_name": [],
+
+  "enable_dns_zone": false,
+  "dns_zone_domain": "example.com",
+
+  "node_pools": [
+    {
+      "name": "default",
+      "machine_type": "e2-standard-2",
+      "min_count": 1,
+      "max_count": 2,
+      "preemptible": false,
+      "disk_size_gb": 100,
+      "node_locations": "us-central1-a,us-central1-b"
+    }
+  ],
+
+  "database_subnets": "10.0.1.0/24",
+  "gke_subnets": "10.1.0.0/16",
+  "gke_pods_range": "10.2.0.0/16",
+  "gke_services_range": "10.3.0.0/20",
+  "proxy_only_subnet_cidr": "10.100.0.0/23",
+
+  "jwks_base64": "CHANGE_ME",
+
+  "cloudsql_disk_size": 10,
+  "cloudsql_read_replica_count": 0,
+  "cloudsql_tier": "db-custom-4-3840",
+  "cloudsql_read_replica_tier": "db-custom-2-3840",
+
+  "metabase_cloudsql_tier": "db-f1-micro",
+  "metabase_cloudsql_disk_size": 10,
+
+  "enable_dicom": false,
+  "enable_legacy_ingress": false,
+  "enable_cloud_armor": true,
+
+  "service_account_email": "iac-tofu@my-gcp-project.iam.gserviceaccount.com",
+  "jumphost_ssh_keys": [
+    {
+      "user": "ubuntu",
+      "key": "ssh-ed25519 AAAA... user@host"
+    }
+  ],
+
+  "helm_config": {
+    "care_backend": {
+      "repository": "ghcr.io/ohcnetwork/care",
+      "tag": "latest"
+    },
+    "care_frontend": {
+      "repository": "ghcr.io/ohcnetwork/care_fe",
+      "tag": "latest"
+    },
+    "metabase": {
+      "repository": "metabase/metabase",
+      "tag": "v0.57.x"
+    },
+    "redis": {
+      "repository": "redis",
+      "tag": "8-alpine"
+    }
+  },
+
+  "enable_billing_budget": true,
+  "billing_budget_currency_code": "USD",
+  "billing_budget_monthly_amount": 1000,
+  "billing_budget_alert_emails": [
+    "ops@example.com"
+  ],
+
+  "snowstorm_deployment_url": "https://terminology.example.com/fhir",
+
+  "metabase_encryption_secret_key_override": null,
+
+  "enable_cloud_build": false,
+  "cloud_build": {
+    "be_source_repo": "https://github.com/ohcnetwork/care",
+    "fe_source_repo": "https://github.com/ohcnetwork/care_fe",
+    "artifact_registry_repo": "care"
+  },
+
+  "additional_config_map_data": {},
+  "additional_secrets": {},
+
+  "cluster_name": "myorg-myapp-staging",
+  "namespace_name": "staging",
+  "vpc_network_name": "myorg-staging",
+  "database_subnet_name": "database-myapp-staging",
+  "gke_subnet_name": "gke-myapp-staging",
+  "pods_range_name": "gke-pods-range-myapp-staging",
+  "services_range_name": "gke-services-range-myapp-staging",
+  "gateway_ip_name": "care-pip-myapp-staging",
+  "flow_logs_bucket": "myorg-staging-vpc-flow-logs",
+  "cloudsql_private_ip_name": "cloudsql-private-ip-myapp-staging"
+}

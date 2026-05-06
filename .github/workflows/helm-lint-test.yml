@@ -1,0 +1,63 @@
+name: Helm Lint & Test
+
+on:
+  pull_request:
+    paths:
+      - "helm_charts/**"
+
+jobs:
+  lint:
+    name: Lint Charts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.17.3
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2
+
+      - name: List changed charts
+        id: list-changed
+        run: |
+          changed=$(ct list-changed --config ct.yaml)
+          if [[ -n "$changed" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Lint changed charts
+        if: steps.list-changed.outputs.changed == 'true'
+        run: ct lint --config ct.yaml
+
+  template:
+    name: Template Charts
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chart:
+          - care_be
+          - care_fe
+          - dcm4chee
+          - gateway
+          - metabase
+          - redis
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.17.3
+
+      - name: Helm template
+        run: |
+          helm template test-release helm_charts/${{ matrix.chart }} \
+            -f helm_charts/commons.yaml \
+            -f helm_charts/${{ matrix.chart }}/values.yaml

@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dcm4chee.fullname" . }}-ohif
+  labels:
+    {{- include "dcm4chee.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ohif
+spec:
+  replicas: {{ .Values.ohif.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "dcm4chee.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ohif
+  template:
+    metadata:
+      annotations:
+        checksum/ohif-config: {{ include (print $.Template.BasePath "/configmap-ohif.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "dcm4chee.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ohif
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "dcm4chee.serviceAccountName" . }}
+      containers:
+        - name: ohif
+          image: "{{ .Values.ohif.image.repository }}:{{ .Values.ohif.image.tag }}"
+          imagePullPolicy: {{ .Values.ohif.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          volumeMounts:
+            - name: ohif-config
+              mountPath: /usr/share/nginx/html/app-config.js
+              subPath: app-config.js
+          resources:
+            {{- toYaml .Values.ohif.resources | nindent 12 }}
+      volumes:
+        - name: ohif-config
+          configMap:
+            name: {{ include "dcm4chee.fullname" . }}-ohif-config
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

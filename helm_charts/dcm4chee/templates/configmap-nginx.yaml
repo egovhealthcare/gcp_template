@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dcm4chee.fullname" . }}-nginx-config
+  labels:
+    {{- include "dcm4chee.labels" . | nindent 4 }}
+data:
+  nginx.conf: |
+    worker_processes 1;
+
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        include       mime.types;
+        default_type  application/octet-stream;
+
+        sendfile        on;
+        keepalive_timeout  65;
+
+        server {
+            listen       80;
+            server_name  localhost;
+            client_max_body_size {{ .Values.nginx.clientMaxBodySize }};
+
+            # CORS Headers
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' '*' always;
+            add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+            # OHIF Viewer
+            location / {
+                if ($request_method = OPTIONS) {
+                    return 204;
+                }
+
+                proxy_pass http://{{ include "dcm4chee.fullname" . }}-ohif.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.ohif.service.port }};
+                proxy_set_header HOST $host;
+                proxy_set_header X-Real-IP $remote_addr;
+            }
+
+            # DCM4CHE Server
+            location /dicomweb/ {
+                if ($request_method = OPTIONS) {
+                    return 204;
+                }
+
+                auth_request /authenticate;
+
+                proxy_set_header authorization "";
+                proxy_set_header Authorization "";
+
+                proxy_pass http://{{ include "dcm4chee.fullname" . }}-arc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.arc.service.port }};
+                proxy_set_header HOST $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                rewrite /dicomweb(.*) $1 break;
+            }
+
+            # Authentication Endpoint
+            location = /authenticate {
+                internal;
+                proxy_pass {{ .Values.nginx.authBackendUrl }};
+                proxy_set_header HOST $host;
+                proxy_set_header Acc $remote_addr;
+                proxy_set_header Accept application/json;
+            }
+        }
+    }

@@ -1,0 +1,65 @@
+{{- if .Values.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "dcm4chee.fullname" . }}-db-migration
+  labels:
+    {{- include "dcm4chee.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  ttlSecondsAfterFinished: {{ .Values.migration.ttlSecondsAfterFinished }}
+  backoffLimit: {{ .Values.migration.backoffLimit }}
+  template:
+    metadata:
+      labels:
+        {{- include "dcm4chee.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: migrate
+          image: postgres:17-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              echo "=== DICOM Database Migration ==="
+
+              psql "$DATABASE_URL" -c "CREATE TABLE IF NOT EXISTS schema_migrations (
+                filename VARCHAR(255) PRIMARY KEY,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+              );"
+
+              for script in $(ls /migrations/*.sql | sort); do
+                filename=$(basename "$script")
+                applied=$(psql "$DATABASE_URL" -t -c "SELECT COUNT(*) FROM schema_migrations WHERE filename = '$filename';" | tr -d ' ')
+
+                if [ "$applied" = "0" ]; then
+                  echo "Applying: $filename"
+                  psql "$DATABASE_URL" -f "$script" && \
+                  psql "$DATABASE_URL" -c "INSERT INTO schema_migrations (filename) VALUES ('$filename');"
+                else
+                  echo "Skipping: $filename (already applied)"
+                fi
+              done
+
+              echo "=== Migration complete ==="
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dcm4chee.fullname" . }}-secret
+                  key: DATABASE_URL
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
+              readOnly: true
+      volumes:
+        - name: migrations
+          configMap:
+            name: {{ include "dcm4chee.fullname" . }}-migration-scripts
+{{- end }}

@@ -1,0 +1,148 @@
+# Default values for metabase
+# Cloud provider (gcp, aws, azure, etc.)
+global:
+  cloudProvider: null
+  backendPolicy:
+    enabled: false
+    securityPolicy: ""
+  httpRoute:
+    enabled: false
+  gateway:
+    name: ""
+
+replicaCount: 1
+
+# Container registry configuration (Zot)
+registry:
+  enabled: false
+  host: "zot"
+  port: "5000"
+
+image:
+  repository: metabase/metabase  # Image name in the registry
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+# Command to start the container
+command: []
+
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+  annotations: {}
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Health check configuration
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Environment variables (non-sensitive)
+env: []
+  # - name: MB_JETTY_PORT
+  #   value: "3000"
+
+# Environment variables from ConfigMap
+envFromConfigMap: []
+
+# Environment variables from Secret
+envFromSecret: []
+
+# Environment variables from Secret keys (individual keys)
+envFromSecretKey: []
+  # - name: MB_DB_PASS
+  #   secretName: metabase-db-secret
+  #   key: password
+
+# ConfigMap data
+configMap:
+  enabled: true
+  data: {}
+    # MB_JETTY_PORT: "3000"
+    # MB_DB_TYPE: "postgres"
+
+# Secret data (base64 encoded values)
+secret:
+  enabled: true
+  data: {}
+    # Other secret values can be added here (base64 encoded)
+
+# Volume mounts
+volumeMounts: []
+
+# Volumes
+volumes: []
+
+# Enabled only when using GCP and Cloud Armor for backend security
+backendPolicy:
+  enabled: "{{ .Values.global.backendPolicy.enabled }}"
+  # Name of the Cloud Armor regional security policy (must exist)
+  securityPolicy: "{{ .Values.global.backendPolicy.securityPolicy }}"
+  timeoutSec: 60
+  drainingTimeoutSec: 60
+  healthCheck:
+    checkIntervalSec: 10
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    port: 3000
+    path: /api/health
+
+httpRoute:
+  enabled: "{{ .Values.global.httpRoute.enabled }}"
+  # Name of the Gateway resource to attach to
+  gatewayName: "{{ .Values.global.gateway.name }}"
+  annotations: {}
+  hostnames: []

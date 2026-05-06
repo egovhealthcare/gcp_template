@@ -1,0 +1,22 @@
+{{- if and (eq .Values.global.cloudProvider "gcp") .Values.gateway.gatewayPolicy.enabled }}
+---
+apiVersion: networking.gke.io/v1
+kind: GCPGatewayPolicy
+metadata:
+  name: {{ include "gateway.gatewayName" . }}-policy
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4 }}
+spec:
+  default:
+    {{- if .Values.gateway.gatewayPolicy.securityPolicy }}
+    securityPolicy: {{ .Values.gateway.gatewayPolicy.securityPolicy }}
+    {{- end }}
+    {{- if .Values.gateway.gatewayPolicy.sslPolicy }}
+    sslPolicy: {{ .Values.gateway.gatewayPolicy.sslPolicy }}
+    {{- end }}
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: {{ include "gateway.gatewayName" . }}
+{{- end }}

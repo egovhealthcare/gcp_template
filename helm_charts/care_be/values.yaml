@@ -1,0 +1,258 @@
+# Default values for care-be
+# Cloud provider (gcp, aws, azure, etc.)
+global:
+  cloudProvider: null
+  backendPolicy:
+    enabled: false
+    securityPolicy: ""
+  httpRoute:
+    enabled: false
+  gateway:
+    name: ""
+
+replicaCount: 2
+
+api:
+  enabled: true
+  replicaCount: 2
+  command:
+    - /app/start.sh
+  service:
+    type: ClusterIP
+    port: 9000
+    targetPort: 9000
+    annotations: {}
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 3Gi
+    requests:
+      cpu: 500m
+      memory: 2Gi
+  # Health check configuration
+  livenessProbe:
+    enabled: true
+    httpGet:
+      path: /health/
+      port: http
+    initialDelaySeconds: 70
+    periodSeconds: 10
+    timeoutSeconds: 20
+    failureThreshold: 5
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /ping/
+      port: http
+    initialDelaySeconds: 70
+    periodSeconds: 10
+    timeoutSeconds: 20
+    failureThreshold: 5
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+  podAnnotations: {}
+  tolerations: []
+  affinity: {}
+  nodeSelector: {}
+
+# Celery Worker configuration
+celeryWorker:
+  enabled: true
+  replicaCount: 1
+  command:
+    - /app/celery_worker.sh
+  podAnnotations: {}
+  resources:
+    limits:
+      cpu: 500m
+      memory: 3Gi
+    requests:
+      cpu: 250m
+      memory: 1Gi
+
+# Celery Beat configuration
+celeryBeat:
+  enabled: true
+  replicaCount: 1
+  command:
+    - /app/celery_beat.sh
+  podAnnotations: {}
+  resources:
+    limits:
+      cpu: 250m
+      memory: 2Gi
+    requests:
+      cpu: 150m
+      memory: 250Mi
+
+# Migration Job configuration
+migrationJob:
+  enabled: false
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400  # Keep completed job for 24 hours
+  command:
+    - "bash"
+    - "-c"
+    - 'export DATABASE_URL="postgres://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@$${POSTGRES_HOST}:$${POSTGRES_PORT}/$${POSTGRES_DB}" && python manage.py migrate && python manage.py sync_permissions_roles && python manage.py sync_valueset'
+  resources:
+    limits:
+      cpu: 500m
+      memory: 3Gi
+    requests:
+      cpu: 250m
+      memory: 1Gi
+
+# Container registry configuration (Zot)
+registry:
+  enabled: false
+  host: "zot"
+  port: "5000"  # Leave empty for default port, or specify port number
+  # Alternative: if Zot is in default namespace, use "zot.default.svc.cluster.local"
+  # Or if in same namespace as app, use just "zot"
+
+
+image:
+  repository: ghcr.io/ohcnetwork/care  # Image name in the registry
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+# Command to start the container
+# Leave empty to use the default image command
+command: []
+  # - "bash"
+  # - "./scripts/start.sh"
+
+imagePullSecrets: []
+  # If Zot registry requires authentication, add secret name here:
+  # - name: zot-registry-secret
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# service:
+#   type: ClusterIP
+#   port: 80
+#   targetPort: 8080
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Health check configuration
+livenessProbe:
+  enabled: false
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: false
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Environment variables (non-sensitive)
+env: []
+  # - name: DATABASE_URL
+  #   value: "postgresql://user:pass@host:5432/dbname"
+  # - name: LOG_LEVEL
+  #   value: "info"
+
+# Environment variables from ConfigMap
+envFromConfigMap: []
+  # - name: app-config
+  #   prefix: APP_
+
+# Environment variables from Secret
+envFromSecret: []
+  # - name: app-secrets
+  #   prefix: SECRET_
+
+# ConfigMap data
+configMap:
+  enabled: true
+  data: {}
+
+# Secret data (base64 encoded values)
+secret:
+  enabled: true
+  data: {}
+    # DATABASE_PASSWORD: "cGFzc3dvcmQ="  # base64 encoded value
+
+# Volume mounts
+volumeMounts: []
+  # - name: config
+  #   mountPath: /app/config
+  #   readOnly: true
+
+# Volumes
+volumes: []
+  # - name: config
+  #   configMap:
+  #     name: care-be-config
+
+# Enabled only when using GCP and Cloud Armor for backend security
+backendPolicy:
+  enabled: "{{ .Values.global.backendPolicy.enabled }}"
+  # Name of the Cloud Armor regional security policy (must exist)
+  securityPolicy: "{{ .Values.global.backendPolicy.securityPolicy }}"
+  timeoutSec: 60
+  drainingTimeoutSec: 60
+  healthCheck:
+    checkIntervalSec: 10
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    port: 9000
+    path: /health/
+
+httpRoute:
+  enabled: "{{ .Values.global.httpRoute.enabled }}"
+  # Name of the Gateway resource to attach to
+  gatewayName: "{{ .Values.global.gateway.name }}"
+  annotations: {}
+  hostnames: []

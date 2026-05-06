@@ -1,0 +1,15 @@
+{{- if .Values.migration.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dcm4chee.fullname" . }}-migration-scripts
+  labels:
+    {{- include "dcm4chee.labels" . | nindent 4 }}
+data:
+  10_create-psql.sql: |
+{{ .Files.Get "files/migrations/10_create-psql.sql" | indent 4 }}
+  20_create-fk-index.sql: |
+{{ .Files.Get "files/migrations/20_create-fk-index.sql" | indent 4 }}
+  30_create-case-insensitive-index.sql: |
+{{ .Files.Get "files/migrations/30_create-case-insensitive-index.sql" | indent 4 }}
+{{- end }}

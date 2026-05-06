@@ -1,0 +1,50 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ include "gateway.gatewayName" . }}
+  namespace: {{ .Values.global.namespace | default .Release.Namespace }}
+  labels:
+    {{- include "gateway.labels" . | nindent 4 }}
+spec:
+  gatewayClassName: {{ .Values.gateway.gatewayClassName | default .Values.global.gateway.gatewayClassName }}
+  {{- if and (eq .Values.global.cloudProvider "gcp") .Values.gateway.address.enabled .Values.gateway.address.value }}
+  addresses:
+    - type: {{ .Values.gateway.address.type }}
+      value: {{ .Values.gateway.address.value }}
+  {{- end }}
+  listeners:
+    {{- if .Values.gateway.httpsListener.enabled }}
+    - name: {{ .Values.gateway.httpsListener.name }}
+      protocol: {{ .Values.gateway.httpsListener.protocol }}
+      port: {{ .Values.gateway.httpsListener.port }}
+      tls:
+        mode: {{ .Values.gateway.httpsListener.tls.mode }}
+        {{- if eq .Values.gateway.httpsListener.tls.tlsMode "certmanager" }}
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: {{ .Values.gateway.httpsListener.tls.secretName }}
+        {{- else if and (eq .Values.gateway.httpsListener.tls.tlsMode "gcp") .Values.gateway.httpsListener.tls.certificateManagerCerts }}
+        options:
+          networking.gke.io/cert-manager-certs: {{ .Values.gateway.httpsListener.tls.certificateManagerCerts | quote }}
+        {{- end }}
+      allowedRoutes:
+        kinds:
+          {{- range .Values.gateway.httpsListener.allowedRoutes.kinds }}
+          - kind: {{ .kind }}
+          {{- end }}
+        namespaces:
+          from: {{ .Values.gateway.httpsListener.allowedRoutes.namespaces.from }}
+    {{- end }}
+    {{- if .Values.gateway.httpListener.enabled }}
+    - name: {{ .Values.gateway.httpListener.name }}
+      protocol: {{ .Values.gateway.httpListener.protocol }}
+      port: {{ .Values.gateway.httpListener.port }}
+      allowedRoutes:
+        kinds:
+          {{- range .Values.gateway.httpListener.allowedRoutes.kinds }}
+          - kind: {{ .kind }}
+          {{- end }}
+        namespaces:
+          from: {{ .Values.gateway.httpListener.allowedRoutes.namespaces.from }}
+    {{- end }}

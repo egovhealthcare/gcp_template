@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dcm4chee.fullname" . }}-arc
+  labels:
+    {{- include "dcm4chee.labels" . | nindent 4 }}
+    app.kubernetes.io/component: arc
+spec:
+  replicas: {{ .Values.arc.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "dcm4chee.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: arc
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "dcm4chee.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: arc
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "dcm4chee.serviceAccountName" . }}
+      containers:
+        - name: arc
+          image: "{{ .Values.arc.image.repository }}:{{ .Values.arc.image.tag }}"
+          imagePullPolicy: {{ .Values.arc.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: LDAP_URL
+              value: "ldap://{{ include "dcm4chee.fullname" . }}-ldap.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.ldap.service.port }}"
+            - name: LDAP_ROOTPASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dcm4chee.fullname" . }}-secret
+                  key: LDAP_ADMIN_PASSWORD
+            - name: WILDFLY_CHOWN
+              value: "/storage"
+            - name: WILDFLY_WAIT_FOR
+              value: "{{ include "dcm4chee.fullname" . }}-ldap.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.ldap.service.port }}"
+          {{- if or .Values.envFromSecret (and .Values.secret.enabled .Values.secret.data) }}
+          envFrom:
+            {{- range .Values.envFromSecret }}
+            - secretRef:
+                name: {{ .name }}
+            {{- end }}
+            {{- if and .Values.secret.enabled .Values.secret.data }}
+            - secretRef:
+                name: {{ include "dcm4chee.fullname" . }}-secret
+            {{- end }}
+          {{- end }}
+          volumeMounts:
+            - name: arc-storage
+              mountPath: /storage
+            - name: arc-wildfly
+              mountPath: /opt/wildfly/standalone
+          resources:
+            {{- toYaml .Values.arc.resources | nindent 12 }}
+      volumes:
+        - name: arc-storage
+          emptyDir: {}
+        - name: arc-wildfly
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

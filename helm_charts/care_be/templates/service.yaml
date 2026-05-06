@@ -1,0 +1,24 @@
+{{- if .Values.api.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "care-be.fullname" . }}
+  labels:
+    {{- include "care-be.labels" . | nindent 4 }}
+  annotations:
+    cloud.google.com/neg: '{"exposed_ports":{"{{ .Values.api.service.port }}":{}}}'
+    {{- if .Values.api.service.annotations }}
+    {{- toYaml .Values.api.service.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .Values.api.service.type }}
+  ports:
+    - port: {{ .Values.api.service.port }}
+      targetPort: {{  .Values.api.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "care-be.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+{{- end }}
+

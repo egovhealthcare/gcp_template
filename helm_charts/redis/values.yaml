@@ -1,0 +1,35 @@
+replicaCount: 1
+
+image:
+  repository: redis
+  tag: 8-alpine
+  pullPolicy: IfNotPresent
+
+port: 6379
+
+service:
+  type: ClusterIP
+  port: 6379
+
+resources:
+  requests:
+    memory: 128Mi
+    cpu: "100m"
+  limits:
+    memory: 256Mi
+    cpu: "500m"
+
+nameOverride: ""
+fullnameOverride: "redis"
+imagePullSecrets: []
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80

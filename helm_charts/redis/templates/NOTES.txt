@@ -1,0 +1,10 @@
+Redis has been deployed!
+
+To connect to Redis from within the cluster, use:
+  {{ include "redis.fullname" . }}:{{ .Values.service.port }}
+
+To check the status:
+  kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }} -n {{ .Release.Namespace }}
+
+To verify connectivity:
+  kubectl run -it --rm redis-cli --image=redis:{{ .Values.image.tag }} --restart=Never -- redis-cli -h {{ include "redis.fullname" . }} -p {{ .Values.service.port }} ping

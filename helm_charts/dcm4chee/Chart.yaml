@@ -1,0 +1,6 @@
+apiVersion: v2
+name: dcm4chee
+description: A Helm chart for DCM4CHEE DICOM server with OHIF viewer
+type: application
+version: 0.1.0
+appVersion: "5.34.1"

@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dcm4chee.fullname" . }}-ldap
+  labels:
+    {{- include "dcm4chee.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ldap
+spec:
+  replicas: {{ .Values.ldap.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "dcm4chee.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ldap
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "dcm4chee.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ldap
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "dcm4chee.serviceAccountName" . }}
+      containers:
+        - name: ldap
+          image: "{{ .Values.ldap.image.repository }}:{{ .Values.ldap.image.tag }}"
+          imagePullPolicy: {{ .Values.ldap.image.pullPolicy }}
+          ports:
+            - name: ldap
+              containerPort: 389
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  ldapsearch -x -D "cn=admin,dc=dcm4che,dc=org" -w "$LDAP_ROOTPASS" -H ldap:/// \
+                    -b "dcmStorageID=fs1,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=dcm4che,dc=org" \
+                    dcmURI | grep -q "{{ .Values.ldap.storage.endpoint }}"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          env:
+            - name: LDAP_ROOTPASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dcm4chee.fullname" . }}-secret
+                  key: LDAP_ADMIN_PASSWORD
+            - name: DICOM_BUCKET_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dcm4chee.fullname" . }}-secret
+                  key: DICOM_BUCKET_NAME
+            - name: GCS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dcm4chee.fullname" . }}-secret
+                  key: GCS_ACCESS_KEY
+            - name: GCS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dcm4chee.fullname" . }}-secret
+                  key: GCS_SECRET_KEY
+            - name: LDAP_INIT_CMDS
+              value: "/etc/openldap/configure.sh /etc/openldap/custom/apply-bucket-config.sh"
+          volumeMounts:
+            - name: ldap-data
+              mountPath: /var/lib/openldap/openldap-data
+            - name: ldap-config
+              mountPath: /etc/openldap/slapd.d
+            - name: ldif-config
+              mountPath: /etc/openldap/custom
+          resources:
+            {{- toYaml .Values.ldap.resources | nindent 12 }}
+      volumes:
+        - name: ldap-data
+          emptyDir: {}
+        - name: ldap-config
+          emptyDir: {}
+        - name: ldif-config
+          configMap:
+            name: {{ include "dcm4chee.fullname" . }}-ldif
+            defaultMode: 0755
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

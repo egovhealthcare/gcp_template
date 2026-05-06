@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dcm4chee.fullname" . }}-ldif
+  labels:
+    {{- include "dcm4chee.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ldap
+data:
+  bucket-config.ldif: |
+    dn: dcmStorageID=fs1,dicomDeviceName=dcm4chee-arc,cn=Devices,cn=DICOM Configuration,dc=dcm4che,dc=org
+    changetype: modify
+    replace: dcmURI
+    dcmURI: jclouds:aws-s3:{{ .Values.ldap.storage.endpoint }}
+    -
+    add: dcmProperty
+    dcmProperty: container=BUCKET_PLACEHOLDER
+    dcmProperty: containerExists=true
+    dcmProperty: endpoint={{ .Values.ldap.storage.endpoint }}
+    dcmProperty: credential=SECRET_KEY_PLACEHOLDER
+    dcmProperty: identity=ACCESS_KEY_PLACEHOLDER
+    dcmProperty: jclouds.relax-hostname=true
+    dcmProperty: jclouds.s3.path-style-access=true
+    dcmProperty: jclouds.s3.virtual-host-buckets=false
+    dcmProperty: jclouds.strip-expect-header=true
+    dcmProperty: jclouds.trust-all-certs=false
+    dcmProperty: jclouds.s3.signer-version=4
+    dcmProperty: streamingUpload=false
+    -
+  apply-bucket-config.sh: |
+    #!/bin/sh
+    set -e
+
+    # Substitute environment variables into bucket config LDIF
+    sed "s|BUCKET_PLACEHOLDER|$DICOM_BUCKET_NAME|g; s|SECRET_KEY_PLACEHOLDER|$GCS_SECRET_KEY|g; s|ACCESS_KEY_PLACEHOLDER|$GCS_ACCESS_KEY|g" \
+      /etc/openldap/custom/bucket-config.ldif > /tmp/bucket-config.ldif
+
+    echo "Applying LDAP bucket configuration..."
+    ldapmodify -x -D "cn=admin,dc=dcm4che,dc=org" \
+      -H ldap://localhost:389 \
+      -w "$LDAP_ROOTPASS" \
+      -f /tmp/bucket-config.ldif || true
+    echo "Bucket configuration applied."

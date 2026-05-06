@@ -1,0 +1,60 @@
+module "gke_cluster" {
+  source  = "terraform-google-modules/kubernetes-engine/google"
+  version = "~> 36.3"
+
+  project_id          = var.project_id
+  name                = local.cluster_name
+  regional            = false
+  region              = var.region
+  zones               = [local.cfg["zone"]]
+  network             = module.vpc.network_name
+  subnetwork          = local.gke_subnet_name
+  deletion_protection = false
+  ip_range_pods       = google_compute_global_address.pods_range.name
+  cluster_resource_labels = {
+    billing = "gke-cluster"
+  }
+  ip_range_services        = google_compute_global_address.services_range.name
+  remove_default_node_pool = true
+
+  # Enable Gateway API for regional external Application Load Balancer
+  gateway_api_channel = "CHANNEL_STANDARD"
+
+  # → enable GKE Metadata Server for Workload Identity
+  node_metadata = "GKE_METADATA_SERVER"
+
+  # → run every node under your writer SA
+  service_account = local.writer_sa_email
+
+  # → give all node-pools full cloud-platform scope
+  node_pools_oauth_scopes = {
+    all = ["https://www.googleapis.com/auth/cloud-platform"]
+  }
+
+  # → leave pools definition unchanged
+  node_pools = local.cfg["node_pools"]
+  node_pools_labels = {
+    "default" : {
+      "billing" : "gke-node-pools"
+    }
+  }
+}
+
+
+#################################################################
+# 3. IAM binding: allow the KSA to impersonate the GSA
+#################################################################
+resource "google_service_account_iam_member" "gcloud_debugger_wi" {
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${local.writer_sa_email}"
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "serviceAccount:${var.project_id}.svc.id.goog[default/gcloud-debugger-sa]"
+}
+
+#################################################################
+# Allow GKE nodes to pull images from Artifact Registry
+#################################################################
+resource "google_project_iam_member" "node_sa_ar_reader" {
+  project = var.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${local.writer_sa_email}"
+}

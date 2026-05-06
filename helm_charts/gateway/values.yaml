@@ -1,0 +1,90 @@
+# Default values for gateway chart
+# This chart deploys Gateway API resources
+# Most values are provided via global.gateway from common_helm_values
+
+global:
+  cloudProvider: null
+  namespace: null
+  gateway:
+    name: null
+    namespace: null
+    gatewayClassName: null
+
+# Gateway configuration
+gateway:
+  # Gateway name (defaults to global.gateway.name)
+  name: ""
+
+  # Gateway class (defaults to global.gateway.gatewayClassName)
+  # Examples: gke-l7-regional-external-managed (GCP), aws-application-load-balancer (AWS)
+  gatewayClassName: ""
+
+  # Named address for the gateway (GCP-specific)
+  address:
+    enabled: true
+    type: "NamedAddress"
+    value: ""  # Will be provided by Terraform
+
+  # HTTPS Listener configuration
+  httpsListener:
+    enabled: true
+    name: "https"
+    port: 443
+    protocol: "HTTPS"
+    tls:
+      mode: "Terminate"
+      # TLS mode: "certmanager" (K8s Secret from cert-manager) or "gcp" (GCP Certificate Manager)
+      tlsMode: "certmanager"
+      # Name of the K8s Secret containing the TLS cert/key (used when tlsMode=certmanager)
+      secretName: "care-gateway-tls"  # Will be provided by Terraform
+      # GCP Certificate Manager certificate name (used when tlsMode=gcp)
+      certificateManagerCerts: ""
+    allowedRoutes:
+      kinds:
+        - kind: "HTTPRoute"
+      namespaces:
+        from: "Same"
+
+  # HTTP Listener configuration
+  httpListener:
+    enabled: true
+    name: "http"
+    port: 80
+    protocol: "HTTP"
+    allowedRoutes:
+      kinds:
+        - kind: "HTTPRoute"
+      namespaces:
+        from: "Same"
+
+  # GCP Gateway Policy (Cloud Armor + SSL policy applied at the Gateway level)
+  # Only used when global.cloudProvider=gcp
+  gatewayPolicy:
+    enabled: false
+    securityPolicy: ""
+    sslPolicy: ""
+
+# HTTP to HTTPS redirect
+httpRedirect:
+  enabled: true
+  name: "http-to-https-redirect"
+  scheme: "https"
+  statusCode: 301
+
+# cert-manager: ClusterIssuer + Certificate for Let's Encrypt TLS
+certmanager:
+  enabled: false
+  clusterIssuer:
+    name: "letsencrypt-prod"
+    server: "https://acme-v02.api.letsencrypt.org/directory"
+    privateKeySecretName: "letsencrypt-prod-account-key"
+    solver:
+      httpSectionName: "http"
+  certificate:
+    name: "care-gateway-cert"
+    secretName: "care-gateway-tls"
+    dnsNames: []
+
+# Name override
+nameOverride: ""
+fullnameOverride: ""

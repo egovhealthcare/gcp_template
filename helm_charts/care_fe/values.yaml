@@ -1,0 +1,111 @@
+# Default values for care-fe
+# Cloud provider (gcp, aws, azure, etc.)
+global:
+  cloudProvider: null
+  backendPolicy:
+    enabled: false
+    securityPolicy: ""
+  httpRoute:
+    enabled: false
+  gateway:
+    name: ""
+
+replicaCount: 2
+
+# Container registry configuration (Zot)
+registry:
+  enabled: false
+  host: "zot"
+  port: "5000"  # Leave empty for default port, or specify port number
+
+image:
+  repository: ghcr.io/ohcnetwork/care_fe  # Image name in the registry
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+  # If Zot registry requires authentication, add secret name here:
+  # - name: zot-registry-secret
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 80
+  annotations: {}
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Health check configuration
+livenessProbe:
+  enabled: false
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: false
+  httpGet:
+    path: /
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Enabled only when using GCP and Cloud Armor for backend security
+backendPolicy:
+  enabled: "{{ .Values.global.backendPolicy.enabled }}"
+  # Name of the Cloud Armor regional security policy (must exist)
+  securityPolicy: "{{ .Values.global.backendPolicy.securityPolicy }}"
+  timeoutSec: 60
+  drainingTimeoutSec: 60
+  healthCheck:
+    checkIntervalSec: 10
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    port: 80
+    path: /
+
+httpRoute:
+  enabled: "{{ .Values.global.httpRoute.enabled }}"
+  # Name of the Gateway resource to attach to
+  gatewayName: "{{ .Values.global.gateway.name }}"
+  annotations: {}
+  hostnames: []
