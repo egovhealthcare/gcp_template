@@ -130,8 +130,8 @@ resource "kubernetes_service" "care_service_legacy" {
     name      = "care-backend-legacy"
     namespace = local.namespace_name
     labels = {
-      "app"             = "care-backend-legacy"
-      "ingress-type"    = "legacy"
+      "app"          = "care-backend-legacy"
+      "ingress-type" = "legacy"
     }
     annotations = {
       "cloud.google.com/neg"            = jsonencode({ ingress = true })
@@ -163,8 +163,8 @@ resource "kubernetes_service" "metabase_service_legacy" {
     name      = "metabase-legacy"
     namespace = local.namespace_name
     labels = {
-      "app"             = "metabase-legacy"
-      "ingress-type"    = "legacy"
+      "app"          = "metabase-legacy"
+      "ingress-type" = "legacy"
     }
     annotations = {
       "cloud.google.com/neg"            = jsonencode({ ingress = true })
@@ -210,7 +210,7 @@ resource "kubernetes_manifest" "frontend_config" {
 # --- ManagedCertificates (one per domain — GKE limit: 1 domain per cert) ---
 
 resource "kubernetes_manifest" "managed_cert_api" {
-  for_each = local.enable_legacy_ingress ? toset(local.cfg["api_domain_name"]) : toset([])
+  for_each = local.enable_legacy_ingress ? toset(var.api_domain_name) : toset([])
   manifest = {
     apiVersion = "networking.gke.io/v1beta1"
     kind       = "ManagedCertificate"
@@ -225,7 +225,7 @@ resource "kubernetes_manifest" "managed_cert_api" {
 }
 
 resource "kubernetes_manifest" "managed_cert_metabase" {
-  for_each = local.enable_legacy_ingress ? toset(local.cfg["metabase_domain_name"]) : toset([])
+  for_each = local.enable_legacy_ingress ? toset(var.metabase_domain_name) : toset([])
   manifest = {
     apiVersion = "networking.gke.io/v1beta1"
     kind       = "ManagedCertificate"
@@ -251,14 +251,14 @@ resource "kubernetes_ingress_v1" "nginx_ingress" {
       "kubernetes.io/ingress.global-static-ip-name" = local.legacy_ingress_ip_name
       "networking.gke.io/managed-certificates"      = join(",", concat([for cert in kubernetes_manifest.managed_cert_api : cert.manifest.metadata.name], [for cert in kubernetes_manifest.managed_cert_metabase : cert.manifest.metadata.name]))
       "networking.gke.io/v1beta1.FrontendConfig"    = kubernetes_manifest.frontend_config[0].manifest.metadata.name
-      "kubernetes.io/ingress.allow-http"             = "false"
+      "kubernetes.io/ingress.allow-http"            = "false"
       "cloud.google.com/security-policy"            = module.cloud_armor[0].policy.name
     }
   }
 
   spec {
     dynamic "rule" {
-      for_each = local.cfg["api_domain_name"]
+      for_each = var.api_domain_name
       content {
         host = rule.value
         http {
@@ -278,7 +278,7 @@ resource "kubernetes_ingress_v1" "nginx_ingress" {
       }
     }
     dynamic "rule" {
-      for_each = local.cfg["metabase_domain_name"]
+      for_each = var.metabase_domain_name
       content {
         host = rule.value
         http {

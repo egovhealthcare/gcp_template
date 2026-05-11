@@ -1,16 +1,16 @@
 resource "google_compute_address" "jumphost_ip" {
-  name    = "jumphost-ip-${local.cfg["app"]}-${local.cfg["environment"]}"
+  name    = "jumphost-ip-${var.app}-${var.environment}"
   region  = var.region
   project = var.project_id
 }
 
 resource "google_compute_instance" "jumphost" {
-  name         = "jumphost-${local.cfg["app"]}-${local.cfg["environment"]}"
+  name         = "jumphost-${var.app}-${var.environment}"
   machine_type = "e2-medium"
-  zone         = local.cfg["zone"]
+  zone         = var.zone
   project      = var.project_id
 
-  tags = ["jumphost-${local.cfg["app"]}-${local.cfg["environment"]}", "ssh"]
+  tags = ["jumphost-${var.app}-${var.environment}", "ssh"]
 
   lifecycle {
     prevent_destroy = true
@@ -35,13 +35,13 @@ resource "google_compute_instance" "jumphost" {
   }
 
   service_account {
-    email  = local.cfg["service_account_email"]
+    email  = var.service_account_email
     scopes = ["cloud-platform"]
   }
 
   metadata = {
     enable-oslogin = "FALSE"
-    ssh-keys       = join("\n", [for entry in local.cfg["jumphost_ssh_keys"] : "${entry.user}:${entry.key}"])
+    ssh-keys       = join("\n", [for entry in var.jumphost_ssh_keys : "${entry.user}:${entry.key}"])
     startup-script = <<-EOT
       #!/bin/bash
       set -e
@@ -80,7 +80,7 @@ resource "google_compute_instance" "jumphost" {
 }
 
 resource "google_compute_firewall" "jumphost_ssh" {
-  name    = "jumphost-${local.cfg["app"]}-${local.cfg["environment"]}"
+  name    = "jumphost-${var.app}-${var.environment}"
   network = module.vpc.network_name
   project = var.project_id
 
@@ -90,5 +90,5 @@ resource "google_compute_firewall" "jumphost_ssh" {
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["jumphost-${local.cfg["app"]}-${local.cfg["environment"]}"]
+  target_tags   = ["jumphost-${var.app}-${var.environment}"]
 }

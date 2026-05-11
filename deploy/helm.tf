@@ -118,7 +118,7 @@ resource "helm_release" "care_frontend" {
 }
 
 resource "helm_release" "dcm4chee" {
-  count     = lookup(local.cfg, "enable_dicom", false) ? 1 : 0
+  count     = var.enable_dicom ? 1 : 0
   name      = "dcm4chee"
   chart     = "${path.module}/../helm_charts/dcm4chee"
   namespace = local.namespace_name

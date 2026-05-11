@@ -6,7 +6,7 @@ module "gke_cluster" {
   name                = local.cluster_name
   regional            = false
   region              = var.region
-  zones               = [local.cfg["zone"]]
+  zones               = [var.zone]
   network             = module.vpc.network_name
   subnetwork          = local.gke_subnet_name
   deletion_protection = false
@@ -32,7 +32,7 @@ module "gke_cluster" {
   }
 
   # → leave pools definition unchanged
-  node_pools = local.cfg["node_pools"]
+  node_pools = var.node_pools
   node_pools_labels = {
     "default" : {
       "billing" : "gke-node-pools"

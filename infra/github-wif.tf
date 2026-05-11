@@ -1,10 +1,9 @@
 locals {
-  enable_github_wif = lookup(local.cfg, "enable_github_wif", false)
-  wif_cfg           = lookup(local.cfg, "github_wif", {})
+  enable_github_wif = var.enable_github_wif
 
-  wif_github_repo      = lookup(local.wif_cfg, "github_repo", "")
-  wif_environment_name = lookup(local.wif_cfg, "environment_name", var.project_id)
-  wif_sa_name          = lookup(local.wif_cfg, "sa_name", "${local.cfg["org"]}-${local.cfg["environment"]}-${local.cfg["app"]}-gh-deployer")
+  wif_github_repo      = var.github_repo
+  wif_environment_name = var.project_id
+  wif_sa_name          = "${var.org}-${var.environment}-${var.app}-gh-deployer"
 
   # ---------------------------------------------------------------------------
   # Predefined roles — minimum required to run `tofu apply` on deploy/ and
@@ -14,19 +13,20 @@ locals {
   # need iam.serviceAccountAdmin, workloadIdentityPoolAdmin, or projectIamAdmin.
   # Cloud Build is phased out, so cloudbuild.editor is not needed.
   # ---------------------------------------------------------------------------
-  wif_sa_roles = lookup(local.wif_cfg, "sa_roles", concat(
+  wif_sa_roles_default = concat(
     [
-      "roles/container.admin",                # GKE: create namespaces, manage all K8s resources + Helm
-      "roles/secretmanager.secretAccessor",    # Read tofu-env-* config from Secret Manager
+      "roles/container.admin",                    # GKE: create namespaces, manage all K8s resources + Helm
+      "roles/secretmanager.secretAccessor",       # Read tofu-env-* config from Secret Manager
       "roles/secretmanager.secretVersionManager", # Write new secret versions (CI image tag updates)
-      "roles/storage.admin",                 # GCS state backend read/write (can scope to state bucket)
-      "roles/artifactregistry.writer",       # Push/pull container images
+      "roles/storage.admin",                      # GCS state backend read/write (can scope to state bucket)
+      "roles/artifactregistry.writer",            # Push/pull container images
     ],
     # Conditional: only when legacy ingress is enabled
-    lookup(local.cfg, "enable_legacy_ingress", false) ? [
-      "roles/compute.securityAdmin",         # SSL policies + Cloud Armor
+    var.enable_legacy_ingress ? [
+      "roles/compute.securityAdmin", # SSL policies + Cloud Armor
     ] : [],
-  ))
+  )
+  wif_sa_roles = local.wif_sa_roles_default
 }
 
 # -----------------------------------------------------------------------------

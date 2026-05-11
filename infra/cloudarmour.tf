@@ -1,5 +1,5 @@
 locals {
-  owasp_rules = lookup(local.cfg, "enable_cloud_armor", false) ? {
+  owasp_rules = var.enable_cloud_armor ? {
     sqli             = { priority = 1000, rule = "sqli-v33-stable" }
     xss              = { priority = 1001, rule = "xss-v33-stable" }
     rce              = { priority = 1002, rule = "rce-v33-stable" }
@@ -9,8 +9,8 @@ locals {
 }
 
 resource "google_compute_region_ssl_policy" "care_ssl_policy" {
-  count           = lookup(local.cfg, "enable_cloud_armor", false) ? 1 : 0
-  name            = "care-ssl-policy-${local.cfg["app"]}-${local.cfg["environment"]}"
+  count           = var.enable_cloud_armor ? 1 : 0
+  name            = "care-ssl-policy-${var.app}-${var.environment}"
   region          = var.region
   project         = var.project_id
   min_tls_version = "TLS_1_2"
@@ -18,9 +18,9 @@ resource "google_compute_region_ssl_policy" "care_ssl_policy" {
 }
 
 resource "google_compute_region_security_policy" "care" {
-  count       = lookup(local.cfg, "enable_cloud_armor", false) ? 1 : 0
+  count       = var.enable_cloud_armor ? 1 : 0
   provider    = google-beta
-  name        = "care-security-policy-${local.cfg["app"]}-${local.cfg["environment"]}"
+  name        = "care-security-policy-${var.app}-${var.environment}"
   description = "Regional Cloud Armor security policy for CARE"
   project     = var.project_id
   region      = var.region
@@ -28,7 +28,7 @@ resource "google_compute_region_security_policy" "care" {
 }
 
 resource "google_compute_region_security_policy_rule" "default_allow" {
-  count           = lookup(local.cfg, "enable_cloud_armor", false) ? 1 : 0
+  count           = var.enable_cloud_armor ? 1 : 0
   provider        = google-beta
   project         = var.project_id
   region          = var.region
@@ -44,7 +44,7 @@ resource "google_compute_region_security_policy_rule" "default_allow" {
 }
 
 resource "google_compute_region_security_policy_rule" "acme_challenge_allow" {
-  count           = lookup(local.cfg, "enable_cloud_armor", false) ? 1 : 0
+  count           = var.enable_cloud_armor ? 1 : 0
   provider        = google-beta
   project         = var.project_id
   region          = var.region
@@ -59,7 +59,7 @@ resource "google_compute_region_security_policy_rule" "acme_challenge_allow" {
 }
 
 resource "google_compute_region_security_policy_rule" "geo_block" {
-  count           = lookup(local.cfg, "enable_cloud_armor", false) ? 1 : 0
+  count           = var.enable_cloud_armor ? 1 : 0
   provider        = google-beta
   project         = var.project_id
   region          = var.region

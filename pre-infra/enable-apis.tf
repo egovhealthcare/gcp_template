@@ -20,19 +20,11 @@ module "project_services" {
       "artifactregistry.googleapis.com",
     ],
     # --- Conditional ---
-    lookup(local.cfg, "enable_billing_budget", false) ? [
-      "monitoring.googleapis.com",
-      "billingbudgets.googleapis.com",
-      "cloudbilling.googleapis.com",
-    ] : [],
-    lookup(local.cfg, "enable_dns_zone", false) ? [
+    var.enable_dns_zone ? [
       "dns.googleapis.com",
     ] : [],
-    lookup(local.cfg, "enable_github_wif", false) ? [
+    var.enable_github_wif ? [
       "iamcredentials.googleapis.com",
-    ] : [],
-    lookup(local.cfg, "enable_cloud_build", false) ? [
-      "cloudbuild.googleapis.com",
     ] : [],
     # "aiplatform.googleapis.com", # in case scribe is needed
   )

@@ -42,19 +42,19 @@ module "cloudsql" {
 
   # Core instance settings
   project_id = var.project_id
-  name       = "care-${local.cfg["app"]}-${local.cfg["environment"]}"
+  name       = "care-${var.app}-${var.environment}"
   region     = var.region
   edition    = "ENTERPRISE"
-  zone       = local.cfg["zones"][0]
+  zone       = var.zones[0]
 
   # Database version and configuration
   database_version = "POSTGRES_17"
-  tier             = local.cfg["cloudsql_tier"]
+  tier             = var.cloudsql_tier
 
   # High availability and disk configuration
   availability_type = "REGIONAL"
   disk_type         = "PD_SSD"
-  disk_size         = local.cfg["cloudsql_disk_size"]
+  disk_size         = var.cloudsql_disk_size
   disk_autoresize   = true
 
   # Security and networking
@@ -126,21 +126,21 @@ module "cloudsql" {
   maintenance_window_update_track = "stable"
 
   # Database and user configuration
-  db_name      = "${local.cfg["app"]}_${local.cfg["environment"]}"
+  db_name      = "${var.app}_${var.environment}"
   db_charset   = "UTF8"
   db_collation = "en_US.UTF8"
 
-  user_name     = "${local.cfg["app"]}_${local.cfg["environment"]}_user"
+  user_name     = "${var.app}_${var.environment}_user"
   user_password = random_password.database_master.result
 
   additional_databases = [
     {
-      name      = "${local.cfg["app"]}_${local.cfg["environment"]}_user"
+      name      = "${var.app}_${var.environment}_user"
       charset   = "UTF8"
       collation = "en_US.UTF8"
     },
     {
-      name      = "dicom_${local.cfg["environment"]}"
+      name      = "dicom_${var.environment}"
       charset   = "UTF8"
       collation = "en_US.UTF8"
     },
@@ -148,7 +148,7 @@ module "cloudsql" {
 
   additional_users = [
     {
-      name            = "dicom_${local.cfg["environment"]}_user"
+      name            = "dicom_${var.environment}_user"
       password        = random_password.dicom_database_password.result
       random_password = false
     },
@@ -156,10 +156,10 @@ module "cloudsql" {
 
   # Read replicas
   read_replicas = [
-    for i in range(local.cfg["cloudsql_read_replica_count"]) : {
+    for i in range(var.cloudsql_read_replica_count) : {
       name              = "-read-${i + 1}"
-      tier              = coalesce(lookup(local.cfg, "cloudsql_read_replica_tier", null), local.cfg["cloudsql_tier"])
-      zone              = element(local.cfg["zones"], (i + 1) % length(local.cfg["zones"]))
+      tier              = coalesce(var.cloudsql_read_replica_tier, var.cloudsql_tier)
+      zone              = element(var.zones, (i + 1) % length(var.zones))
       availability_type = "ZONAL"
       disk_type         = "PD_SSD"
       disk_autoresize   = true
@@ -206,19 +206,19 @@ module "metabase_cloudsql" {
 
   # Core instance settings
   project_id = var.project_id
-  name       = "metabase-${local.cfg["app"]}-${local.cfg["environment"]}"
+  name       = "metabase-${var.app}-${var.environment}"
   region     = var.region
   edition    = "ENTERPRISE"
-  zone       = local.cfg["zones"][0]
+  zone       = var.zones[0]
 
   # Database version and configuration
   database_version = "POSTGRES_17"
-  tier             = local.cfg["metabase_cloudsql_tier"]
+  tier             = var.metabase_cloudsql_tier
 
   # High availability and disk configuration
   availability_type = "REGIONAL"
   disk_type         = "PD_SSD"
-  disk_size         = local.cfg["metabase_cloudsql_disk_size"]
+  disk_size         = var.metabase_cloudsql_disk_size
   disk_autoresize   = true
 
   # Security and networking
@@ -290,11 +290,11 @@ module "metabase_cloudsql" {
   maintenance_window_update_track = "stable"
 
   # Database and user configuration
-  db_name      = "metabase_${local.cfg["environment"]}"
+  db_name      = "metabase_${var.environment}"
   db_charset   = "UTF8"
   db_collation = "en_US.UTF8"
 
-  user_name     = "metabase_${local.cfg["environment"]}_user"
+  user_name     = "metabase_${var.environment}_user"
   user_password = random_password.metabase_database_master.result
 
   # No read replicas for metabase

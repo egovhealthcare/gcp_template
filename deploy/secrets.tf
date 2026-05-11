@@ -21,7 +21,7 @@ resource "kubernetes_secret" "metabase" {
 }
 
 resource "kubernetes_secret" "dcm4chee" {
-  count = lookup(local.cfg, "enable_dicom", false) ? 1 : 0
+  count = var.enable_dicom ? 1 : 0
   metadata {
     name      = "dcm4chee-secret"
     namespace = local.namespace_name

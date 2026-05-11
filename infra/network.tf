@@ -42,7 +42,7 @@ module "vpc" {
     },
     {
       subnet_name               = local.gke_subnet_name
-      subnet_ip                 = local.cfg["gke_subnets"]
+      subnet_ip                 = var.gke_subnets
       subnet_region             = var.region
       subnet_flow_logs          = "true"
       subnet_flow_logs_metadata = "INCLUDE_ALL_METADATA"
@@ -55,11 +55,11 @@ module "vpc" {
     (local.gke_subnet_name) = [
       {
         range_name    = local.pods_range_name
-        ip_cidr_range = local.cfg["gke_pods_range"]
+        ip_cidr_range = var.gke_pods_range
       },
       {
         range_name    = local.services_range_name
-        ip_cidr_range = local.cfg["gke_services_range"]
+        ip_cidr_range = var.gke_services_range
       }
     ]
   }
@@ -67,8 +67,8 @@ module "vpc" {
 }
 
 resource "google_compute_subnetwork" "proxy_only" {
-  name          = "proxy-only-subnet-${local.cfg["app"]}-${local.cfg["environment"]}"
-  ip_cidr_range = local.cfg["proxy_only_subnet_cidr"]
+  name          = "proxy-only-subnet-${var.app}-${var.environment}"
+  ip_cidr_range = var.proxy_only_subnet_cidr
   region        = var.region
   project       = var.project_id
   network       = module.vpc.network_id

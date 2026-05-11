@@ -1,27 +1,52 @@
-.PHONY: init plan deploy destroy lint
+.PHONY: init plan deploy destroy lint pull-tfvars push-tfvars
 
-# Config is fetched from GCP Secret Manager via data source at plan/apply time.
-# Requires: TF_VAR_project_id, TF_VAR_region, TF_VAR_env_name, BACKEND_BUCKET env vars.
+# pre-infra reads variables from a tfvars file pulled from Secret Manager.
+# Required env vars:
+#   BACKEND_BUCKET
+#   PROJECT_ID or TF_VAR_project_id
+#   ENV_NAME or TF_VAR_environment
 
 BACKEND_PREFIX := pre-infra
 
 export TF_VAR_backend_bucket := $(BACKEND_BUCKET)
+PROJECT_ID ?= $(TF_VAR_project_id)
+ENV_NAME ?= $(or $(TF_VAR_environment),$(TF_VAR_env_name))
+TFVARS_SECRET_NAME ?= tofu-tfvars-$(ENV_NAME)
+TFVARS_FILE ?= ../environments/$(ENV_NAME).tfvars
+TFVARS_ARGS := -var-file=$(TFVARS_FILE)
+
+pull-tfvars:
+	@test -n "$(PROJECT_ID)" || (echo "ERROR: PROJECT_ID (or TF_VAR_project_id) is required" && exit 1)
+	@test -n "$(ENV_NAME)" || (echo "ERROR: ENV_NAME (or TF_VAR_environment) is required" && exit 1)
+	@../scripts/tfvars-pull.sh \
+		--project="$(PROJECT_ID)" \
+		--env="$(ENV_NAME)" \
+		--secret="$(TFVARS_SECRET_NAME)" \
+		--out="$(TFVARS_FILE)"
+
+push-tfvars:
+	@test -n "$(PROJECT_ID)" || (echo "ERROR: PROJECT_ID (or TF_VAR_project_id) is required" && exit 1)
+	@test -n "$(ENV_NAME)" || (echo "ERROR: ENV_NAME (or TF_VAR_environment) is required" && exit 1)
+	@test -n "$(LOCAL_TFVARS_FILE)" || (echo "ERROR: LOCAL_TFVARS_FILE is required (example: ../environments/devops-care.tfvars)" && exit 1)
+	@../scripts/tfvars-push.sh \
+		--project="$(PROJECT_ID)" \
+		--env="$(ENV_NAME)" \
+		--secret="$(TFVARS_SECRET_NAME)" \
+		--file="$(LOCAL_TFVARS_FILE)"
 
 init:
-	ln -sf ../variables.tf variables.tf
-	ln -sf ../config.tf config.tf
 	@tofu init \
 		-backend-config="bucket=$(BACKEND_BUCKET)" \
 		-backend-config="prefix=$(BACKEND_PREFIX)"
 
-plan:
-	@tofu plan
+plan: pull-tfvars
+	@tofu plan $(TFVARS_ARGS)
 
-deploy:
-	@tofu apply -auto-approve
+deploy: pull-tfvars
+	@tofu apply -auto-approve $(TFVARS_ARGS)
 
-destroy:
-	@tofu destroy
+destroy: pull-tfvars
+	@tofu destroy $(TFVARS_ARGS)
 
 lint:
 	@tofu fmt -write=true -recursive

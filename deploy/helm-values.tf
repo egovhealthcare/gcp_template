@@ -18,7 +18,7 @@ locals {
         }
       }
       gatewayPolicy = {
-        enabled        = lookup(local.cfg, "enable_cloud_armor", false)
+        enabled        = var.enable_cloud_armor
         securityPolicy = data.terraform_remote_state.infra.outputs.security_policy_name
         sslPolicy      = data.terraform_remote_state.infra.outputs.ssl_policy_name
       }
@@ -34,9 +34,9 @@ locals {
         }
       }
       certificate = {
-        name       = "${local.cfg["org"]}-${local.cfg["app"]}-${local.cfg["environment"]}-gateway-cert"
+        name       = "${var.org}-${var.app}-${var.environment}-gateway-cert"
         secretName = local.certmanager_tls_secret_name
-        dnsNames   = concat(local.cfg["web_domain_name"], local.cfg["api_domain_name"], local.cfg["metabase_domain_name"], lookup(local.cfg, "dicom_domain_name", []))
+        dnsNames   = concat(var.web_domain_name, var.api_domain_name, var.metabase_domain_name, var.dicom_domain_name)
       }
     }
   }
@@ -44,19 +44,19 @@ locals {
   redis_values = {
     replicaCount = 1
     image = {
-      repository = local.cfg["helm_config"]["redis"]["repository"]
-      tag        = local.cfg["helm_config"]["redis"]["tag"]
+      repository = var.helm_config.redis.repository
+      tag        = var.helm_config.redis.tag
     }
   }
 
   metabase_values = {
     replicaCount = 1
     image = {
-      repository = local.cfg["helm_config"]["metabase"]["repository"]
-      tag        = local.cfg["helm_config"]["metabase"]["tag"]
+      repository = var.helm_config.metabase.repository
+      tag        = var.helm_config.metabase.tag
     }
     httpRoute = {
-      hostnames = local.cfg["metabase_domain_name"]
+      hostnames = var.metabase_domain_name
     }
     envFromSecret = [
       { name = kubernetes_secret.metabase.metadata[0].name }
@@ -65,8 +65,8 @@ locals {
 
   care_backend_values = {
     image = {
-      repository = local.cfg["helm_config"]["care_backend"]["repository"]
-      tag        = local.cfg["helm_config"]["care_backend"]["tag"]
+      repository = var.helm_config.care_backend.repository
+      tag        = var.helm_config.care_backend.tag
     }
     api = {
       replicaCount = 2
@@ -76,7 +76,7 @@ locals {
       data    = local.config_map_data
     }
     httpRoute = {
-      hostnames = local.cfg["api_domain_name"]
+      hostnames = var.api_domain_name
     }
     envFromSecret = [
       { name = kubernetes_secret.care_backend.metadata[0].name }
@@ -86,23 +86,23 @@ locals {
   care_frontend_values = {
     replicaCount = 2
     image = {
-      repository = local.cfg["helm_config"]["care_frontend"]["repository"]
-      tag        = local.cfg["helm_config"]["care_frontend"]["tag"]
+      repository = var.helm_config.care_frontend.repository
+      tag        = var.helm_config.care_frontend.tag
     }
     httpRoute = {
-      hostnames = local.cfg["web_domain_name"]
+      hostnames = var.web_domain_name
     }
   }
 
   dcm4chee_values = {
-    dicomBaseUrl = lookup(local.cfg, "enable_dicom", false) ? "https://${local.cfg["dicom_domain_name"][0]}" : ""
+    dicomBaseUrl = var.enable_dicom ? "https://${var.dicom_domain_name[0]}" : ""
     nginx = {
       authBackendUrl = "http://care-backend-care-be.${local.namespace_name}.svc.cluster.local:${local.care_backend_port}/api/care_radiology/dicom/authenticate/"
     }
     httpRoute = {
-      hostnames = lookup(local.cfg, "dicom_domain_name", [])
+      hostnames = var.dicom_domain_name
     }
-    envFromSecret = lookup(local.cfg, "enable_dicom", false) ? [
+    envFromSecret = var.enable_dicom ? [
       { name = kubernetes_secret.dcm4chee[0].metadata[0].name }
     ] : []
   }
@@ -146,7 +146,7 @@ resource "local_file" "care_frontend_values" {
 }
 
 resource "local_file" "dcm4chee_values" {
-  count           = lookup(local.cfg, "enable_dicom", false) ? 1 : 0
+  count           = var.enable_dicom ? 1 : 0
   filename        = "${local.generated_values_dir}/dcm4chee/values.yaml"
   content         = yamlencode(local.dcm4chee_values)
   file_permission = "0644"

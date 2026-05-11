@@ -20,18 +20,18 @@ output "instance_address" {
 
 output "primary_connection_string" {
   description = "Connection string for the primary instance"
-  value       = "postgresql://${local.cfg["app"]}_${local.cfg["environment"]}_user:${random_password.database_master.result}@${module.cloudsql.private_ip_address}:5432/${local.cfg["app"]}_${local.cfg["environment"]}"
+  value       = "postgresql://${var.app}_${var.environment}_user:${random_password.database_master.result}@${module.cloudsql.private_ip_address}:5432/${var.app}_${var.environment}"
   sensitive   = true
 }
 
 output "database_name" {
   description = "Name of the database created in the Cloud SQL instance"
-  value       = "${local.cfg["app"]}_${local.cfg["environment"]}"
+  value       = "${var.app}_${var.environment}"
 }
 
 output "database_user" {
   description = "Username for the database"
-  value       = "${local.cfg["app"]}_${local.cfg["environment"]}_user"
+  value       = "${var.app}_${var.environment}_user"
 }
 
 output "database_password" {
@@ -49,12 +49,12 @@ output "metabase_instance_address" {
 
 output "metabase_database_name" {
   description = "Name of the database created in the Metabase Cloud SQL instance"
-  value       = "metabase_${local.cfg["environment"]}"
+  value       = "metabase_${var.environment}"
 }
 
 output "metabase_database_user" {
   description = "Username for the metabase database"
-  value       = "metabase_${local.cfg["environment"]}_user"
+  value       = "metabase_${var.environment}_user"
 }
 
 output "metabase_database_password" {
@@ -67,18 +67,18 @@ output "metabase_database_password" {
 
 output "dicom_connection_string" {
   description = "Connection string for the DICOM database"
-  value       = "postgresql://dicom_${local.cfg["environment"]}_user:${random_password.dicom_database_password.result}@${module.cloudsql.private_ip_address}:5432/dicom_${local.cfg["environment"]}"
+  value       = "postgresql://dicom_${var.environment}_user:${random_password.dicom_database_password.result}@${module.cloudsql.private_ip_address}:5432/dicom_${var.environment}"
   sensitive   = true
 }
 
 output "dicom_database_name" {
   description = "Name of the DICOM database"
-  value       = "dicom_${local.cfg["environment"]}"
+  value       = "dicom_${var.environment}"
 }
 
 output "dicom_database_user" {
   description = "Username for the DICOM database"
-  value       = "dicom_${local.cfg["environment"]}_user"
+  value       = "dicom_${var.environment}_user"
 }
 
 output "dicom_database_password" {
