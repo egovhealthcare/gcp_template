@@ -39,8 +39,10 @@ cp environments/sample.tfvars environments/<env>.tfvars
 
 ```bash
 cd pre-infra
-make push-tfvars PROJECT_ID=<gcp-project> ENV_NAME=<env> LOCAL_TFVARS_FILE=../environments/<env>.tfvars
+make push-tfvars PROJECT_ID=<gcp-project> ENV_NAME=<env>
 ```
+
+By default this pushes `../environments/<env>.tfvars`. Override with `LOCAL_TFVARS_FILE=<path>` if needed.
 
 4. Plan/apply module by module:
 

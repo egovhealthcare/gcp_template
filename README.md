@@ -58,8 +58,10 @@ make deploy PROJECT_ID=<gcp-project> ENV_NAME=<env> BACKEND_BUCKET=<state-bucket
 Push local tfvars to Secret Manager:
 
 ```bash
-make push-tfvars PROJECT_ID=<gcp-project> ENV_NAME=<env> LOCAL_TFVARS_FILE=../environments/<env>.tfvars
+make push-tfvars PROJECT_ID=<gcp-project> ENV_NAME=<env>
 ```
+
+By default this pushes `../environments/<env>.tfvars`. Override with `LOCAL_TFVARS_FILE=<path>` if needed.
 
 ## Security Notes
 
