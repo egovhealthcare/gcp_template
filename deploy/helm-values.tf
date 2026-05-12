@@ -1,5 +1,9 @@
 locals {
-  generated_values_dir = "${path.module}/generated_values"
+  generated_values_dir         = "${path.module}/generated_values"
+  care_backend_secret_checksum = sha256(jsonencode(local.secret_data))
+  care_backend_config_checksum = sha256(jsonencode(local.config_map_data))
+  metabase_secret_checksum     = sha256(jsonencode(local.metabase_secret_data))
+  dcm4chee_secret_checksum     = var.enable_dicom ? sha256(jsonencode(local.dicom_secret_data)) : ""
 
   gateway_values = {
     gateway = {
@@ -58,6 +62,9 @@ locals {
     httpRoute = {
       hostnames = var.metabase_domain_name
     }
+    podAnnotations = {
+      "checksum/external-secret" = local.metabase_secret_checksum
+    }
     envFromSecret = [
       { name = kubernetes_secret.metabase.metadata[0].name }
     ]
@@ -70,6 +77,26 @@ locals {
     }
     api = {
       replicaCount = 2
+      podAnnotations = {
+        "checksum/external-secret" = local.care_backend_secret_checksum
+        "checksum/external-config" = local.care_backend_config_checksum
+      }
+    }
+    celeryWorker = {
+      podAnnotations = {
+        "checksum/external-secret" = local.care_backend_secret_checksum
+        "checksum/external-config" = local.care_backend_config_checksum
+      }
+    }
+    celeryBeat = {
+      podAnnotations = {
+        "checksum/external-secret" = local.care_backend_secret_checksum
+        "checksum/external-config" = local.care_backend_config_checksum
+      }
+    }
+    podAnnotations = {
+      "checksum/external-secret" = local.care_backend_secret_checksum
+      "checksum/external-config" = local.care_backend_config_checksum
     }
     configMap = {
       enabled = true
@@ -96,6 +123,9 @@ locals {
 
   dcm4chee_values = {
     dicomBaseUrl = var.enable_dicom ? "https://${var.dicom_domain_name[0]}" : ""
+    podAnnotations = {
+      "checksum/external-secret" = local.dcm4chee_secret_checksum
+    }
     nginx = {
       authBackendUrl = "http://care-backend-care-be.${local.namespace_name}.svc.cluster.local:${local.care_backend_port}/api/care_radiology/dicom/authenticate/"
     }
