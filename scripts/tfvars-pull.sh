@@ -45,10 +45,9 @@ fi
 echo "Pulling tfvars from secret '$SECRET_NAME' (project: $PROJECT_ID)..."
 
 # Restrict file permissions before writing
-  umask 077
-  gcloud secrets versions access latest \
-    --secret="$SECRET_NAME" \
-    --project="$PROJECT_ID" > "$OUT_FILE"
-)
+umask 077
+gcloud secrets versions access latest \
+  --secret="$SECRET_NAME" \
+  --project="$PROJECT_ID" > "$OUT_FILE"
 
 echo "Wrote tfvars to: $OUT_FILE"
