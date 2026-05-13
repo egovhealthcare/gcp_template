@@ -91,7 +91,7 @@ Source of truth is root `variables.tf`.
 | `gke_pods_range` | `string` | `null` | `"10.21.0.0/16"` |
 | `gke_services_range` | `string` | `null` | `"10.22.0.0/20"` |
 | `proxy_only_subnet_cidr` | `string` | `null` | `"10.129.0.0/23"` |
-| `service_account_email` | `string` | `null` | `"iac-tofu@example-project-id.iam.gserviceaccount.com"` |
+| `service_account_email` | `string` | **required** | `"iac-tofu@example-project-id.iam.gserviceaccount.com"` |
 | `jumphost_ssh_keys` | `any` | `[]` | list of `{ user, key }` |
 
 ### DNS and Domains

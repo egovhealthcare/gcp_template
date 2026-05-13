@@ -125,7 +125,11 @@ variable "metabase_cloudsql_disk_size" {
 variable "service_account_email" {
   description = "Service account email used by infra/KMS resources"
   type        = string
-  default     = null
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.gserviceaccount\\.com$", var.service_account_email))
+    error_message = "service_account_email must be a valid GCP service account email (ending in .gserviceaccount.com)."
+  }
 }
 
 variable "jumphost_ssh_keys" {
