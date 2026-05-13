@@ -65,7 +65,7 @@ All charts should reference `global.*` for gateway routing and backend policy co
 
 ## Value Injection from Terraform
 
-- Chart-specific values are generated in `deploy/helm-values.tf` as YAML files under `deploy/generated_values/`.
+- Chart-specific values are defined as locals in `deploy/helm-values.tf` and passed directly to `helm_release` resources via `yamlencode()`. File-based generation under `deploy/generated_values/` is currently disabled.
 - Image configuration originates from `var.helm_config.<chart_key>` with `repository` and `tag` keys.
 - Domain hostnames for HTTPRoute come from `var.web_domain_name`, `var.api_domain_name`, etc.
 - Secret references use `envFromSecret` pointing to Kubernetes secrets created in `deploy/secrets.tf`.
@@ -80,6 +80,6 @@ All charts should reference `global.*` for gateway routing and backend policy co
 
 1. Create `helm_charts/<name>/` with `Chart.yaml`, `values.yaml`, and `templates/`.
 2. Copy `_helpers.tpl` from an existing chart and update the template name prefix.
-3. Add Terraform value generation in `deploy/helm-values.tf`.
-4. Add a `helm_release` resource in `deploy/helm.tf`, merging `common_helm_values`.
+3. Define chart-specific values as a local in `deploy/helm-values.tf`.
+4. Add a `helm_release` resource in `deploy/helm.tf`, merging `common_helm_values` via `yamlencode()`.
 5. Add image configuration to the `helm_config` variable and `environments/sample.tfvars`.

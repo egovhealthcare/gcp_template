@@ -90,8 +90,8 @@ The `deploy/` module runs `tofu plan` with `-lock=false`. All other modules lock
 ## Adding Helm Charts
 
 1. Create a chart under `helm_charts/<name>/` following existing chart patterns.
-2. Define generated values in `deploy/helm-values.tf` as a `local_file` resource.
-3. Add a `helm_release` resource in `deploy/helm.tf`, merging `common_helm_values` with chart-specific values.
+2. Define chart-specific values as a local in `deploy/helm-values.tf`.
+3. Add a `helm_release` resource in `deploy/helm.tf`, merging `common_helm_values` with chart-specific values via `yamlencode()`.
 4. Image configuration comes from `var.helm_config.<chart_key>` (add to `helm_config` variable and `sample.tfvars`).
 
 ## Deploy-Specific Variables
