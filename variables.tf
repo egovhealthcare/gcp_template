@@ -200,6 +200,11 @@ variable "enable_dicom" {
   description = "Enable DICOM stack"
   type        = bool
   default     = false
+
+  validation {
+    condition     = var.enable_dicom == false || length(var.dicom_domain_name) > 0
+    error_message = "dicom_domain_name must contain at least one domain when enable_dicom is true."
+  }
 }
 
 variable "enable_legacy_ingress" {
