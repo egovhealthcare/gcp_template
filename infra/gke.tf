@@ -17,13 +17,16 @@ module "gke_cluster" {
   ip_range_services        = google_compute_global_address.services_range.name
   remove_default_node_pool = true
 
-  # Maintenance window: Wed, Thu, Sat, Sun 12 AM – 4 AM UTC (4 hours)
-  maintenance_start_time = "2024-01-03T00:00:00Z"
-  maintenance_end_time   = "2024-01-03T04:00:00Z"
+  # Maintenance window: Wed, Thu, Sat, Sun 12 AM – 4 AM IST (18:30 – 22:30 UTC)
+  maintenance_start_time = "2024-01-03T18:30:00Z"
+  maintenance_end_time   = "2024-01-03T22:30:00Z"
   maintenance_recurrence = "FREQ=WEEKLY;BYDAY=WE,TH,SA,SU"
 
   # Enable Gateway API for regional external Application Load Balancer
   gateway_api_channel = "CHANNEL_STANDARD"
+
+  # release channel
+  release_channel = "STABLE"
 
   # → enable GKE Metadata Server for Workload Identity
   node_metadata = "GKE_METADATA_SERVER"
