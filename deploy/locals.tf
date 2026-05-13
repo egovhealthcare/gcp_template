@@ -20,6 +20,8 @@ locals {
   environment                 = var.environment
   gateway_name                = "care-regional-gateway"
   certmanager_tls_secret_name = "${var.org}-${var.app}-${var.environment}-gateway-tls"
+  external_tls_secret_name    = "${var.org}-${var.app}-${var.environment}-external-tls"
+  use_external_tls            = var.external_tls_cert != null
 
   metabase_secret_data = {
     MB_DB_TYPE               = "postgres"

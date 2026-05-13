@@ -5,6 +5,22 @@ locals {
   metabase_secret_checksum     = sha256(jsonencode(local.metabase_secret_data))
   dcm4chee_secret_checksum     = var.enable_dicom ? sha256(jsonencode(local.dicom_secret_data)) : ""
 
+  # External wildcard TLS: filter out domains already covered by the wildcard
+  all_domains = concat(var.web_domain_name, var.api_domain_name, var.metabase_domain_name, var.dicom_domain_name)
+
+  # Domains that still need cert-manager (i.e. NOT covered by the wildcard)
+  # Example: wildcard is *.example.org → "app.example.org" is covered, "dicom.other.org" is not
+  certmanager_domains = local.use_external_tls ? [
+    for domain in local.all_domains : domain
+    if !anytrue([for base in var.external_tls_base_domains : endswith(domain, ".${base}") || domain == base])
+  ] : local.all_domains
+
+  # Gateway TLS: list of K8s Secret names to attach to the HTTPS listener
+  gateway_certificate_refs = compact([
+    local.use_external_tls ? local.external_tls_secret_name : "",
+    length(local.certmanager_domains) > 0 ? local.certmanager_tls_secret_name : "",
+  ])
+
   gateway_values = {
     gateway = {
       name             = local.gateway_name
@@ -17,8 +33,8 @@ locals {
       httpsListener = {
         enabled = true
         tls = {
-          tlsMode    = "certmanager"
-          secretName = local.certmanager_tls_secret_name
+          tlsMode         = "certmanager"
+          certificateRefs = [for name in local.gateway_certificate_refs : { name = name }]
         }
       }
       gatewayPolicy = {
@@ -40,7 +56,7 @@ locals {
       certificate = {
         name       = "${var.org}-${var.app}-${var.environment}-gateway-cert"
         secretName = local.certmanager_tls_secret_name
-        dnsNames   = concat(var.web_domain_name, var.api_domain_name, var.metabase_domain_name, var.dicom_domain_name)
+        dnsNames   = local.certmanager_domains
       }
     }
   }

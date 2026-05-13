@@ -327,3 +327,38 @@ variable "snowstorm_deployment_url" {
   type        = string
   default     = "https://terminology.10bedicu.in/fhir"
 }
+
+variable "external_tls_cert" {
+  description = "PEM-encoded TLS certificate (e.g. wildcard *.example.org) provided externally"
+  type        = string
+  sensitive   = true
+  default     = null
+
+  validation {
+    condition     = var.external_tls_cert == null || var.external_tls_cert != ""
+    error_message = "external_tls_cert must not be an empty string. Set to null to disable."
+  }
+}
+
+variable "external_tls_key" {
+  description = "PEM-encoded TLS private key for the external certificate"
+  type        = string
+  sensitive   = true
+  default     = null
+
+  validation {
+    condition     = (var.external_tls_cert == null) == (var.external_tls_key == null)
+    error_message = "external_tls_cert and external_tls_key must both be set or both be null."
+  }
+}
+
+variable "external_tls_base_domains" {
+  description = "Base domains covered by the external wildcard cert (e.g. [\"example.org\"] for *.example.org). Subdomains of these are excluded from cert-manager issuance."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = var.external_tls_cert == null || length(var.external_tls_base_domains) > 0
+    error_message = "external_tls_base_domains must be non-empty when external_tls_cert is provided."
+  }
+}

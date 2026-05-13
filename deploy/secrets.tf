@@ -32,6 +32,25 @@ resource "kubernetes_secret" "dcm4chee" {
   depends_on = [kubernetes_namespace.care_namespace]
 }
 
+resource "kubernetes_secret" "external_tls" {
+  count = var.external_tls_cert != null ? 1 : 0
+
+  metadata {
+    name      = local.external_tls_secret_name
+    namespace = local.namespace_name
+    labels    = local.common_labels
+  }
+
+  type = "kubernetes.io/tls"
+
+  data = {
+    "tls.crt" = var.external_tls_cert
+    "tls.key" = var.external_tls_key
+  }
+
+  depends_on = [kubernetes_namespace.care_namespace]
+}
+
 resource "random_password" "dicom_webhook_secret" {
   length  = 64
   special = false

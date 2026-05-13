@@ -125,3 +125,10 @@ legacy_fe_ip_name        = "care-fe"
 flow_logs_bucket         = "example-org-staging-vpc-flow-logs"
 cloudsql_private_ip_name = "cloudsql-private-ip"
 nat_ip_address_name      = "nat-ip-example-app-staging"
+
+# External wildcard TLS certificate (optional).
+# When provided, the Gateway uses this cert for domains matching the base domains.
+# cert-manager still issues certs for domains NOT covered by the wildcard.
+# external_tls_cert         = file("path/to/wildcard.pem")
+# external_tls_key          = file("path/to/wildcard.key")
+# external_tls_base_domains = ["example.org"]

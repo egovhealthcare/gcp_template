@@ -13,6 +13,7 @@ resource "helm_release" "gateway" {
     kubernetes_namespace.care_namespace,
     helm_release.cert_manager,
     kubernetes_secret.gateway_tls_placeholder,
+    kubernetes_secret.external_tls,
   ]
 }
 
