@@ -43,7 +43,7 @@ plan: pull-tfvars
 	@tofu plan -lock=false $(TFVARS_ARGS)
 
 deploy: pull-tfvars
-	@tofu apply -auto-approve $(TFVARS_ARGS)
+	@tofu apply $(TFVARS_ARGS)
 
 destroy: pull-tfvars
 	@tofu destroy $(TFVARS_ARGS)

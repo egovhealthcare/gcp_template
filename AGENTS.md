@@ -23,8 +23,8 @@ Each module directory has a Makefile with identical targets:
 make init          # tofu init with GCS backend
 make pull-tfvars   # pull tfvars from Secret Manager
 make plan          # tofu plan using pulled tfvars
-make deploy        # tofu apply -auto-approve
-make destroy       # tofu destroy -auto-approve
+make deploy        # tofu apply
+make destroy       # tofu destroy
 make lint          # tofu fmt -write=true -recursive
 make push-tfvars   # push local tfvars to Secret Manager
 ```
