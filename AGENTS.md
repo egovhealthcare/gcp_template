@@ -2,81 +2,125 @@
 
 ## Overview
 
-GCP infrastructure-as-code for [CARE](README.md) using OpenTofu (`tofu`) and Helm on GKE.
+This repository contains GCP infrastructure-as-code for [CARE](README.md), built with OpenTofu and Helm on Google Kubernetes Engine (GKE).
 
 ## Architecture
 
-Apply modules in strict order:
+Modules must be applied in the following order:
 
-1. `pre-infra/` — project bootstrap (API enablement, optional DNS zone)
-2. `infra/` — VPC, GKE, Cloud SQL, buckets, Cloud Armor, GitHub WIF
-3. `KMS/` — key ring and crypto keys
-4. `deploy/` — namespace, secrets, Helm releases
+| Order | Module | Purpose |
+|-------|--------|---------|
+| 1 | `pre-infra/` | Project bootstrap: API enablement, optional DNS zone |
+| 2 | `infra/` | VPC, GKE, Cloud SQL, GCS buckets, Cloud Armor, GitHub WIF |
+| 3 | `KMS/` | Key ring and encryption keys |
+| 4 | `deploy/` | Kubernetes namespace, secrets, Helm releases |
 
-`deploy/` reads remote state from `infra` (prefix `infra`) and `KMS` (prefix `keys`) via `terraform_remote_state` in `deploy/init.tf`.
+The `deploy/` module reads remote state from `infra` (prefix `infra`) and `KMS` (prefix `keys`) via `terraform_remote_state` data sources in `deploy/init.tf`.
 
-## Build & Deploy
+## Build and Deploy
 
-Each module directory has a Makefile with identical targets:
+Each module directory contains a Makefile with the following targets:
 
-```sh
-make init          # tofu init with GCS backend
-make pull-tfvars   # pull tfvars from Secret Manager
-make plan          # tofu plan using pulled tfvars
-make deploy        # tofu apply
-make destroy       # tofu destroy
-make lint          # tofu fmt -write=true -recursive
-make push-tfvars   # push local tfvars to Secret Manager
-```
+| Target | Description |
+|--------|-------------|
+| `make init` | Initialize OpenTofu with GCS backend |
+| `make pull-tfvars` | Pull tfvars from Secret Manager |
+| `make plan` | Generate an execution plan |
+| `make deploy` | Apply infrastructure changes |
+| `make destroy` | Tear down resources |
+| `make lint` | Format files recursively |
+| `make push-tfvars` | Push local tfvars to Secret Manager |
 
-Required environment variables (set before running any make target):
+### Required Environment Variables
+
+Set the following before running any target:
 
 - `PROJECT_ID` (or `TF_VAR_project_id`)
 - `ENV_NAME` (or `TF_VAR_environment` / `TF_VAR_env_name`)
 - `BACKEND_BUCKET`
 
-State backend prefixes per module: `pre-infra`, `infra`, `keys`, `deploy-backend`.
+### State Backend Prefixes
 
-> **Note:** `deploy/` plan uses `-lock=false`; all other modules lock normally.
+| Module | Prefix |
+|--------|--------|
+| `pre-infra/` | `pre-infra` |
+| `infra/` | `infra` |
+| `KMS/` | `keys` |
+| `deploy/` | `deploy-backend` |
+
+> The `deploy/` module runs `tofu plan` with `-lock=false`. All other modules use normal locking.
 
 ## Configuration
 
-- All config is tfvars-driven. See [environments/sample.tfvars](environments/sample.tfvars) for the full variable shape.
-- Real tfvars are stored in Secret Manager as `tofu-tfvars-<env>`.
-- Pulled at runtime to `../environments/<env>.tfvars` by `make pull-tfvars`.
-- Never commit real tfvars to the repo.
+All configuration is driven by tfvars files. See [environments/sample.tfvars](environments/sample.tfvars) for the complete variable shape.
+
+- Real tfvars are stored in Secret Manager under the name `tofu-tfvars-<env>`.
+- The `make pull-tfvars` target retrieves them to `../environments/<env>.tfvars`.
+- Real tfvars must never be committed to the repository.
 
 ## Conventions
 
 ### Naming
 
-Resource names follow `{org}-{app}-{environment}` with resource-specific suffixes. Override any derived name via a `coalesce(var.override, derived_default)` pattern.
+Resource names follow the pattern `{org}-{app}-{environment}` with resource-specific suffixes. Any derived name can be overridden using the `coalesce(var.override, derived_default)` pattern.
 
 ### Shared Variables
 
-Root `variables.tf` is **symlinked** into each module directory — do not create separate copies. Module-specific variables go in the module's own `variables.tf` (see `deploy/variables.tf` for deploy-only variables like `helm_config`, `additional_secrets`, `enable_legacy_ingress`).
+The root `variables.tf` is symlinked into each module directory. Do not create separate copies. All variables, including deploy-specific ones (`helm_config`, `additional_secrets`, `additional_config_map_data`, `enable_legacy_ingress`), are defined in this single file.
+
+### Naming Overrides
+
+The following optional variables override auto-derived resource names. All default to `null`:
+
+`cluster_name`, `namespace_name`, `vpc_network_name`, `database_subnet_name`, `gke_subnet_name`, `pods_range_name`, `services_range_name`, `gateway_ip_name`, `legacy_ingress_ip_name`, `legacy_fe_ip_name`, `flow_logs_bucket`, `cloudsql_private_ip_name`, `nat_ip_address_name`
 
 ### Feature Flags
 
-Boolean variables (`enable_dicom`, `enable_cloud_armor`, `enable_github_wif`, `enable_legacy_ingress`, `enable_dns_zone`) gate resources with `count` or `for_each`.
+Boolean variables control optional infrastructure with `count` or `for_each`:
+
+| Flag | Controls |
+|------|----------|
+| `enable_dicom` | DICOM stack (bucket, database, dcm4chee chart) |
+| `enable_cloud_armor` | Cloud Armor security policies |
+| `enable_github_wif` | GitHub Actions Workload Identity Federation |
+| `enable_legacy_ingress` | Legacy GCE Ingress resources |
+| `enable_dns_zone` | Cloud DNS managed zone |
 
 ### Provider Versions
 
-All modules pin: `google`/`google-beta` `~> 6.33`, `random ~> 3.7`, OpenTofu `~> 1.11`. `deploy/` additionally requires `kubernetes ~> 2.0`, `helm ~> 2.0`, `tls ~> 4.0`, `local ~> 2.0`.
+All modules pin: `google`/`google-beta` `~> 6.33`, `random ~> 3.7`, OpenTofu `~> 1.11`.
+
+The `deploy/` module additionally requires: `kubernetes ~> 2.0`, `helm ~> 2.0`, `tls ~> 4.0`, `local ~> 2.0`.
 
 ### Helm Value Injection
 
-Terraform generates Helm values in `deploy/helm-values.tf` as YAML files under `deploy/generated_values/`. These are merged with `common_helm_values` (defined in `deploy/locals.tf`) and passed to `helm_release` resources in `deploy/helm.tf`. Charts: `gateway`, `redis`, `metabase`, `care_be`, `care_fe`, `dcm4chee`.
+Terraform generates Helm values in `deploy/helm-values.tf` as YAML files under `deploy/generated_values/`. These are merged with `common_helm_values` (defined in `deploy/locals.tf`) and passed to `helm_release` resources in `deploy/helm.tf`.
+
+Local charts: `gateway`, `redis`, `metabase`, `care_be`, `care_fe`, `dcm4chee`.
+
+Additionally, `cert-manager` is installed from the Jetstack Helm repository as a dependency for TLS and Gateway API integration.
 
 ### Helm Charts
 
-Charts live under `helm_charts/`. See [.github/instructions/helm.instructions.md](.github/instructions/helm.instructions.md) for conventions. All charts share an identical `_helpers.tpl` pattern for naming, labels, and service account helpers.
+Charts are located under `helm_charts/`. Refer to [.github/instructions/helm.instructions.md](.github/instructions/helm.instructions.md) for detailed conventions. All charts share an identical `_helpers.tpl` pattern for naming, labels, and service account helpers.
+
+## Infrastructure Components
+
+| Component | Description |
+|-----------|-------------|
+| **GKE** | Regional cluster with Gateway API, Workload Identity (`terraform-google-modules/kubernetes-engine/google` ~> 36.3) |
+| **Cloud SQL** | Two PostgreSQL 17 Enterprise instances (primary + Metabase), private IP, optional read replicas |
+| **GCS Buckets** | Three CMEK-encrypted buckets (patient, facility, DICOM) with HMAC access |
+| **Cloud Armor** | Regional security policy with OWASP rules and geo-blocking |
+| **Jumphost** | Debian 13 VM with OpenTofu pre-installed (`infra/jumphost.tf`) |
+| **GitHub WIF** | Workload Identity Federation for GitHub Actions CI/CD |
 
 ## Pitfalls
 
-- Module apply order is strict: `pre-infra` → `infra` → `KMS` → `deploy`.
-- Do not commit real tfvars; store them in Secret Manager.
-- Keep tfvars value types correct (numbers as numbers, booleans as booleans).
-- `variables.tf` in module dirs are symlinks — edit the root file, not the symlink targets.
-- `deploy/` Kubernetes/Helm providers authenticate via `data.google_client_config` access token — requires valid GCP credentials.
-- Secrets in `deploy/locals.tf` are composed from remote state outputs; adding new secrets means updating `local.secret_data` and the corresponding `kubernetes_secret` in `deploy/secrets.tf`.
+- Module apply order is strict. Applying out of order will fail.
+- Never commit real tfvars files. Store them in Secret Manager.
+- Ensure correct value types in tfvars: numbers as numbers, booleans as booleans.
+- The `variables.tf` files in module directories are symlinks. Edit only the root copy.
+- The `deploy/` module authenticates via `data.google_client_config` access token. Valid GCP credentials are required.
+- To add new secrets, update `local.secret_data` in `deploy/locals.tf`. The `kubernetes_secret` in `deploy/secrets.tf` reads from that map automatically.
+- `additional_config_map_data` injects entries into the backend ConfigMap. `additional_secrets` injects entries into the Kubernetes Secret.
