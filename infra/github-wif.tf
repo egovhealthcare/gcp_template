@@ -16,7 +16,7 @@ locals {
   wif_sa_roles_default = concat(
     [
       "roles/container.admin",                    # GKE: create namespaces, manage all K8s resources + Helm
-      "roles/secretmanager.secretAccessor",       # Read tofu-env-* config from Secret Manager
+      "roles/secretmanager.secretAccessor",       # Read tofu-tfvars-<env> secrets from Secret Manager
       "roles/secretmanager.secretVersionManager", # Write new secret versions (CI image tag updates)
       "roles/storage.admin",                      # GCS state backend read/write (can scope to state bucket)
       "roles/artifactregistry.writer",            # Push/pull container images
