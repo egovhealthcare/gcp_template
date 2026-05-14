@@ -3,4 +3,6 @@ chart-dirs:
 
 chart-repos: []
 
+target-branch: develop
+
 validate-maintainers: false
