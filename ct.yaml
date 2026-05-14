@@ -1,8 +1,0 @@
-chart-dirs:
-  - helm_charts
-
-chart-repos: []
-
-target-branch: develop
-
-validate-maintainers: false
