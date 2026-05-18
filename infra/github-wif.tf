@@ -13,7 +13,7 @@ locals {
   # need iam.serviceAccountAdmin, workloadIdentityPoolAdmin, or projectIamAdmin.
   # Cloud Build is phased out, so cloudbuild.editor is not needed.
   # ---------------------------------------------------------------------------
-  wif_sa_roles_default = concat(
+  wif_sa_roles = concat(
     [
       "roles/container.admin",                    # GKE: create namespaces, manage all K8s resources + Helm
       "roles/secretmanager.secretAccessor",       # Read tofu-tfvars-<env> secrets from Secret Manager
@@ -26,7 +26,6 @@ locals {
       "roles/compute.securityAdmin", # SSL policies + Cloud Armor
     ] : [],
   )
-  wif_sa_roles = local.wif_sa_roles_default
 }
 
 # -----------------------------------------------------------------------------
