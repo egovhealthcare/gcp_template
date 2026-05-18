@@ -1,5 +1,4 @@
 locals {
-  generated_values_dir         = "${path.module}/generated_values"
   care_backend_secret_checksum = nonsensitive(sha256(jsonencode(local.secret_data)))
   care_backend_config_checksum = sha256(jsonencode(local.config_map_data))
   metabase_secret_checksum     = nonsensitive(sha256(jsonencode(local.metabase_secret_data)))
@@ -154,50 +153,3 @@ locals {
   }
 
 }
-
-# NOTE: local_file resources for generated values are commented out because
-# helm_release resources consume locals directly via yamlencode().
-# Uncomment if file-based value injection is needed in the future.
-
-# resource "local_file" "common_values" {
-#   filename        = "${local.generated_values_dir}/common/values.yaml"
-#   content         = yamlencode(local.common_helm_values)
-#   file_permission = "0644"
-# }
-
-# resource "local_file" "gateway_values" {
-#   filename        = "${local.generated_values_dir}/gateway/values.yaml"
-#   content         = yamlencode(local.gateway_values)
-#   file_permission = "0644"
-# }
-
-# resource "local_file" "redis_values" {
-#   filename        = "${local.generated_values_dir}/redis/values.yaml"
-#   content         = yamlencode(local.redis_values)
-#   file_permission = "0644"
-# }
-
-# resource "local_file" "metabase_values" {
-#   filename        = "${local.generated_values_dir}/metabase/values.yaml"
-#   content         = yamlencode(local.metabase_values)
-#   file_permission = "0644"
-# }
-
-# resource "local_file" "care_backend_values" {
-#   filename        = "${local.generated_values_dir}/care_be/values.yaml"
-#   content         = yamlencode(local.care_backend_values)
-#   file_permission = "0644"
-# }
-
-# resource "local_file" "care_frontend_values" {
-#   filename        = "${local.generated_values_dir}/care_fe/values.yaml"
-#   content         = yamlencode(local.care_frontend_values)
-#   file_permission = "0644"
-# }
-
-# resource "local_file" "dcm4chee_values" {
-#   count           = var.enable_dicom ? 1 : 0
-#   filename        = "${local.generated_values_dir}/dcm4chee/values.yaml"
-#   content         = yamlencode(local.dcm4chee_values)
-#   file_permission = "0644"
-# }
