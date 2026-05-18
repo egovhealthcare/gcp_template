@@ -12,7 +12,7 @@ Modules must be applied in the following order:
 |-------|--------|---------|
 | 1 | `pre-infra/` | Project bootstrap: API enablement, optional DNS zone |
 | 2 | `infra/` | VPC, GKE, Cloud SQL, GCS buckets, Cloud Armor, GitHub WIF |
-| 3 | `KMS/` | Key ring and encryption keys |
+| 3 | `KMS/` | Key ring, encryption keys, and application secrets (`django_secret_key`, `django_admin_password`, `metabase_encryption_secret_key` via `random_password`) |
 | 4 | `deploy/` | Kubernetes namespace, secrets, Helm releases |
 
 The `deploy/` module reads remote state from `infra` (prefix `infra`) and `KMS` (prefix `keys`) via `terraform_remote_state` data sources in `deploy/init.tf`.
@@ -98,7 +98,33 @@ Helm values are defined as locals in `deploy/helm-values.tf` and passed directly
 
 Local charts: `gateway`, `redis`, `metabase`, `care_be`, `care_fe`, `dcm4chee`.
 
-Additionally, `cert-manager` is installed from the Jetstack Helm repository as a dependency for TLS and Gateway API integration.
+Additionally, `cert-manager` (`v1.19.4` from `https://charts.jetstack.io`) is installed as a hard dependency for TLS and Gateway API integration. The Gateway Helm release depends on cert-manager being ready.
+
+### External TLS Certificates
+
+Optional variables allow injecting a wildcard TLS certificate instead of relying entirely on cert-manager:
+
+- `external_tls_cert` / `external_tls_key` — PEM-encoded cert and key (both required or both null)
+- `external_tls_base_domains` — list of base domains covered by the wildcard (required when cert is provided)
+
+When provided, cert-manager only issues certificates for domains NOT covered by the wildcard.
+
+### Helm Config Variable Shape
+
+`var.helm_config` is a `map(map(string))` with the following expected keys:
+
+```hcl
+helm_config = {
+  care_backend  = { repository = "...", tag = "..." }
+  care_frontend = { repository = "...", tag = "..." }
+  metabase      = { repository = "...", tag = "..." }
+  redis         = { repository = "...", tag = "..." }
+}
+```
+
+### Checksum-Based Pod Restarts
+
+Pod annotations include checksums computed from secret and config data (`sha256(jsonencode(...))`). When secret or config map values change, the checksum changes, triggering a rolling restart without manual intervention.
 
 ### Helm Charts
 
@@ -115,12 +141,37 @@ Charts are located under `helm_charts/`. Refer to [.github/instructions/helm.ins
 | **Jumphost** | Debian 13 VM with OpenTofu pre-installed (`infra/jumphost.tf`) |
 | **GitHub WIF** | Workload Identity Federation for GitHub Actions CI/CD |
 
+## Secrets Flow
+
+```
+infra/ (DB passwords, HMAC keys) ──┐
+                                    ├──→ deploy/locals.tf (secret maps) ──→ kubernetes_secret ──→ Pods
+KMS/ (Django secrets, Metabase key) ┘
+```
+
+Three secret maps in `deploy/locals.tf`:
+- `secret_data` — CARE backend (DB creds, GCS keys, Redis URL, Django secrets, JWKS) + `var.additional_secrets`
+- `metabase_secret_data` — Metabase DB connection + encryption key
+- `dicom_secret_data` — DICOM DB + LDAP + GCS (conditional on `enable_dicom`)
+
+The deploy module also generates `random_password.ldap_admin_password` for the dcm4chee LDAP stack.
+
+## Provider Authentication (deploy module)
+
+The `deploy/` module authenticates to GKE using:
+- `gke_endpoint` and `cluster_ca_certificate` from `infra` remote state
+- Access token from `data.google_client_config`
+
+Valid GCP credentials with cluster access are required.
+
 ## Pitfalls
 
 - Module apply order is strict. Applying out of order will fail.
 - Never commit real tfvars files. Store them in Secret Manager.
 - Ensure correct value types in tfvars: numbers as numbers, booleans as booleans.
 - The `variables.tf` files in module directories are symlinks. Edit only the root copy.
-- The `deploy/` module authenticates via `data.google_client_config` access token. Valid GCP credentials are required.
 - To add new secrets, update `local.secret_data` in `deploy/locals.tf`. The `kubernetes_secret` in `deploy/secrets.tf` reads from that map automatically.
 - `additional_config_map_data` injects entries into the backend ConfigMap. `additional_secrets` injects entries into the Kubernetes Secret.
+- `external_tls_cert` and `external_tls_key` must both be set or both null.
+- `enable_dicom` requires `dicom_domain_name` to be non-empty.
+- `service_account_email` must match `*.gserviceaccount.com`.
