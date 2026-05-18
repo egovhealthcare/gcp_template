@@ -174,10 +174,6 @@ variable "dns_zone_domain" {
   default     = ""
 }
 
-
-
-
-
 variable "enable_github_wif" {
   description = "Enable GitHub WIF resources"
   type        = bool
