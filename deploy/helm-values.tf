@@ -1,9 +1,9 @@
 locals {
   generated_values_dir         = "${path.module}/generated_values"
-  care_backend_secret_checksum = sha256(jsonencode(local.secret_data))
+  care_backend_secret_checksum = nonsensitive(sha256(jsonencode(local.secret_data)))
   care_backend_config_checksum = sha256(jsonencode(local.config_map_data))
-  metabase_secret_checksum     = sha256(jsonencode(local.metabase_secret_data))
-  dcm4chee_secret_checksum     = var.enable_dicom ? sha256(jsonencode(local.dicom_secret_data)) : ""
+  metabase_secret_checksum     = nonsensitive(sha256(jsonencode(local.metabase_secret_data)))
+  dcm4chee_secret_checksum     = var.enable_dicom ? nonsensitive(sha256(jsonencode(local.dicom_secret_data))) : ""
 
   # External wildcard TLS: filter out domains already covered by the wildcard
   all_domains = concat(var.web_domain_name, var.api_domain_name, var.metabase_domain_name, var.dicom_domain_name)
