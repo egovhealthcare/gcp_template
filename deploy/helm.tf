@@ -13,6 +13,7 @@ resource "helm_release" "gateway" {
     kubernetes_namespace.care_namespace,
     helm_release.cert_manager,
     kubernetes_secret.gateway_tls_placeholder,
+    kubernetes_secret.external_tls,
   ]
 }
 
@@ -118,7 +119,7 @@ resource "helm_release" "care_frontend" {
 }
 
 resource "helm_release" "dcm4chee" {
-  count     = lookup(local.cfg, "enable_dicom", false) ? 1 : 0
+  count     = var.enable_dicom ? 1 : 0
   name      = "dcm4chee"
   chart     = "${path.module}/../helm_charts/dcm4chee"
   namespace = local.namespace_name

@@ -21,9 +21,17 @@ spec:
         mode: {{ .Values.gateway.httpsListener.tls.mode }}
         {{- if eq .Values.gateway.httpsListener.tls.tlsMode "certmanager" }}
         certificateRefs:
+          {{- if .Values.gateway.httpsListener.tls.certificateRefs }}
+          {{- range .Values.gateway.httpsListener.tls.certificateRefs }}
+          - group: ""
+            kind: Secret
+            name: {{ .name }}
+          {{- end }}
+          {{- else }}
           - group: ""
             kind: Secret
             name: {{ .Values.gateway.httpsListener.tls.secretName }}
+          {{- end }}
         {{- else if and (eq .Values.gateway.httpsListener.tls.tlsMode "gcp") .Values.gateway.httpsListener.tls.certificateManagerCerts }}
         options:
           networking.gke.io/cert-manager-certs: {{ .Values.gateway.httpsListener.tls.certificateManagerCerts | quote }}

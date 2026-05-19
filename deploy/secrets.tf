@@ -21,7 +21,7 @@ resource "kubernetes_secret" "metabase" {
 }
 
 resource "kubernetes_secret" "dcm4chee" {
-  count = lookup(local.cfg, "enable_dicom", false) ? 1 : 0
+  count = var.enable_dicom ? 1 : 0
   metadata {
     name      = "dcm4chee-secret"
     namespace = local.namespace_name
@@ -29,6 +29,25 @@ resource "kubernetes_secret" "dcm4chee" {
   }
   type       = "Opaque"
   data       = { for k, v in local.dicom_secret_data : k => v }
+  depends_on = [kubernetes_namespace.care_namespace]
+}
+
+resource "kubernetes_secret" "external_tls" {
+  count = var.external_tls_cert != null ? 1 : 0
+
+  metadata {
+    name      = local.external_tls_secret_name
+    namespace = local.namespace_name
+    labels    = local.common_labels
+  }
+
+  type = "kubernetes.io/tls"
+
+  data = {
+    "tls.crt" = var.external_tls_cert
+    "tls.key" = var.external_tls_key
+  }
+
   depends_on = [kubernetes_namespace.care_namespace]
 }
 

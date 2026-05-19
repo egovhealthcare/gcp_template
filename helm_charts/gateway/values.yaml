@@ -35,7 +35,10 @@ gateway:
       mode: "Terminate"
       # TLS mode: "certmanager" (K8s Secret from cert-manager) or "gcp" (GCP Certificate Manager)
       tlsMode: "certmanager"
-      # Name of the K8s Secret containing the TLS cert/key (used when tlsMode=certmanager)
+      # List of K8s Secret refs for multiple certs (used when tlsMode=certmanager)
+      # Each entry: { name: "secret-name" }. When set, takes precedence over secretName.
+      certificateRefs: []
+      # Name of the K8s Secret containing the TLS cert/key (used when tlsMode=certmanager, fallback if certificateRefs is empty)
       secretName: "care-gateway-tls"  # Will be provided by Terraform
       # GCP Certificate Manager certificate name (used when tlsMode=gcp)
       certificateManagerCerts: ""

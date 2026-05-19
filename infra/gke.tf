@@ -6,7 +6,7 @@ module "gke_cluster" {
   name                = local.cluster_name
   regional            = false
   region              = var.region
-  zones               = [local.cfg["zone"]]
+  zones               = [var.zone]
   network             = module.vpc.network_name
   subnetwork          = local.gke_subnet_name
   deletion_protection = false
@@ -17,8 +17,16 @@ module "gke_cluster" {
   ip_range_services        = google_compute_global_address.services_range.name
   remove_default_node_pool = true
 
+  # Maintenance window: Wed, Thu, Sat, Sun 12 AM – 4 AM IST (18:30 – 22:30 UTC)
+  maintenance_start_time = "2024-01-03T18:30:00Z"
+  maintenance_end_time   = "2024-01-03T22:30:00Z"
+  maintenance_recurrence = "FREQ=WEEKLY;BYDAY=WE,TH,SA,SU"
+
   # Enable Gateway API for regional external Application Load Balancer
   gateway_api_channel = "CHANNEL_STANDARD"
+
+  # release channel
+  release_channel = "STABLE"
 
   # → enable GKE Metadata Server for Workload Identity
   node_metadata = "GKE_METADATA_SERVER"
@@ -32,7 +40,7 @@ module "gke_cluster" {
   }
 
   # → leave pools definition unchanged
-  node_pools = local.cfg["node_pools"]
+  node_pools = var.node_pools
   node_pools_labels = {
     "default" : {
       "billing" : "gke-node-pools"
