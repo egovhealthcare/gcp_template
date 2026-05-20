@@ -80,9 +80,42 @@ locals {
     podAnnotations = {
       "checksum/external-secret" = local.metabase_secret_checksum
     }
+    env = [
+      # Metabase ships with ~25% of container memory as heap by default,
+      # which is too small for Liquibase migrations on newer versions.
+      { name = "JAVA_TOOL_OPTIONS", value = "-Xmx2g" },
+    ]
     envFromSecret = [
       { name = kubernetes_secret.metabase.metadata[0].name }
     ]
+    resources = {
+      limits = {
+        cpu    = "2000m"
+        memory = "3Gi"
+      }
+      requests = {
+        cpu    = "500m"
+        memory = "2Gi"
+      }
+    }
+    # Migrations on a cold start can take several minutes; give Metabase
+    # enough time before the liveness probe kills the pod mid-migration.
+    livenessProbe = {
+      enabled             = true
+      httpGet             = { path = "/api/health", port = "http" }
+      initialDelaySeconds = 300
+      periodSeconds       = 30
+      timeoutSeconds      = 10
+      failureThreshold    = 5
+    }
+    readinessProbe = {
+      enabled             = true
+      httpGet             = { path = "/api/health", port = "http" }
+      initialDelaySeconds = 60
+      periodSeconds       = 15
+      timeoutSeconds      = 5
+      failureThreshold    = 10
+    }
   }
 
   care_backend_values = {
