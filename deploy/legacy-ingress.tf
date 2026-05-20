@@ -141,8 +141,9 @@ resource "kubernetes_service" "care_service_legacy" {
   spec {
     type = "NodePort"
     selector = {
-      "app.kubernetes.io/name"     = "care-be"
-      "app.kubernetes.io/instance" = "care-backend"
+      "app.kubernetes.io/name"      = "care-be"
+      "app.kubernetes.io/instance"  = "care-backend"
+      "app.kubernetes.io/component" = "api"
     }
     port {
       name        = "http"
