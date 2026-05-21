@@ -142,6 +142,7 @@ The source of truth for all variables is the root `variables.tf`.
 | `helm_config` | `map(map(string))` | `{}` | Repository and tag map per service |
 | `additional_secrets` | `map(string)` | `{}` | Non-sensitive placeholders only |
 | `additional_config_map_data` | `map(string)` | `{}` | Application config overrides |
+| `additional_plugs` | `string` | `"[]"` | JSON-encoded plugin manifest; overwritten by the deploy pipeline from `build/care/care.env` on every run (edit it there, not in tfvars) |
 | `snowstorm_deployment_url` | `string` | `"https://terminology.10bedicu.in/fhir"` | `"https://terminology.example.org/fhir"` |
 | `metabase_encryption_secret_key_override` | `string` | `null` | `null` |
 

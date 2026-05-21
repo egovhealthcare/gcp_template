@@ -234,6 +234,12 @@ variable "additional_config_map_data" {
   default     = {}
 }
 
+variable "additional_plugs" {
+  description = "JSON-encoded plugin manifest for the care backend. Overwritten by the deploy pipeline from build/care/care.env on every run."
+  type        = string
+  default     = "[]"
+}
+
 variable "namespace_name" {
   description = "Override for Kubernetes namespace name"
   type        = string

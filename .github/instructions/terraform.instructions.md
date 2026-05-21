@@ -96,7 +96,7 @@ The `deploy/` module runs `tofu plan` with `-lock=false`. All other modules lock
 
 ## Deploy-Specific Variables
 
-All variables — including deploy-focused ones such as `helm_config`, `additional_secrets`, `additional_config_map_data`, `enable_legacy_ingress`, `jwks_base64`, `namespace_name`, and resource name overrides — are defined in the root `variables.tf` (symlinked into every module). Refer to `environments/sample.tfvars` for the complete shape.
+All variables — including deploy-focused ones such as `helm_config`, `additional_secrets`, `additional_config_map_data`, `additional_plugs`, `enable_legacy_ingress`, `jwks_base64`, `namespace_name`, and resource name overrides — are defined in the root `variables.tf` (symlinked into every module). Refer to `environments/sample.tfvars` for the complete shape.
 
 ## tfvars Workflow
 
