@@ -47,6 +47,7 @@ locals {
     AWS_REQUEST_CHECKSUM_CALCULATION         = "when_required"
     SNOWSTORM_DEPLOYMENT_URL                 = var.snowstorm_deployment_url
     MAINTAIN_PATIENT_PHONE_NUMBER_IDENTIFIER = "true"
+    ADDITIONAL_PLUGS                         = var.additional_plugs
   }, var.additional_config_map_data)
 
   secret_data = merge({

@@ -66,7 +66,7 @@ Resource names follow the pattern `{org}-{app}-{environment}` with resource-spec
 
 ### Shared Variables
 
-The root `variables.tf` is symlinked into each module directory. Do not create separate copies. All variables, including deploy-specific ones (`helm_config`, `additional_secrets`, `additional_config_map_data`, `enable_legacy_ingress`), are defined in this single file.
+The root `variables.tf` is symlinked into each module directory. Do not create separate copies. All variables, including deploy-specific ones (`helm_config`, `additional_secrets`, `additional_config_map_data`, `additional_plugs`, `enable_legacy_ingress`), are defined in this single file.
 
 ### Naming Overrides
 
@@ -172,6 +172,7 @@ Valid GCP credentials with cluster access are required.
 - The `variables.tf` files in module directories are symlinks. Edit only the root copy.
 - To add new secrets, update `local.secret_data` in `deploy/locals.tf`. The `kubernetes_secret` in `deploy/secrets.tf` reads from that map automatically.
 - `additional_config_map_data` injects entries into the backend ConfigMap. `additional_secrets` injects entries into the Kubernetes Secret.
+- `additional_plugs` is a top-level string tfvar (JSON-encoded array) that is overwritten by the deploy pipeline from each env's `build/care/care.env` `ADDITIONAL_PLUGS` line on every run. It is injected into the backend ConfigMap as `ADDITIONAL_PLUGS`. Edit it in the deploy-states repo, not in the tfvars secret. Do not also set `ADDITIONAL_PLUGS` inside `additional_config_map_data` — that would override the top-level value. Do not nest it under `additional_config_map_data` either; `hcledit` cannot patch nested keys.
 - `external_tls_cert` and `external_tls_key` must both be set or both null.
 - `enable_dicom` requires `dicom_domain_name` to be non-empty.
 - `service_account_email` must match `*.gserviceaccount.com`.
