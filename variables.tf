@@ -318,6 +318,12 @@ variable "nat_ip_address_name" {
   default     = null
 }
 
+variable "proxy_only_subnet_name" {
+  description = "Override name for the regional managed proxy-only subnet. Defaults to proxy-only-subnet-<app>-<environment>. Set this to adopt an existing subnet (e.g. the legacy hardcoded \"proxy-only-subnet\") since subnet names are immutable in GCP."
+  type        = string
+  default     = null
+}
+
 variable "metabase_encryption_secret_key_override" {
   description = "Override for Metabase encryption secret key"
   type        = string

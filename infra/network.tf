@@ -67,7 +67,7 @@ module "vpc" {
 }
 
 resource "google_compute_subnetwork" "proxy_only" {
-  name          = "proxy-only-subnet-${var.app}-${var.environment}"
+  name          = local.proxy_only_subnet_name
   ip_cidr_range = var.proxy_only_subnet_cidr
   region        = var.region
   project       = var.project_id

@@ -36,6 +36,7 @@ locals {
   flow_logs_bucket         = coalesce(var.flow_logs_bucket, "${var.org}-${var.environment}-vpc-flow-logs")
   cloudsql_private_ip_name = coalesce(var.cloudsql_private_ip_name, "cloudsql-private-ip-${var.app}-${var.environment}")
   nat_ip_address_name      = coalesce(var.nat_ip_address_name, "nat-ip-${var.app}-${var.environment}")
+  proxy_only_subnet_name   = coalesce(var.proxy_only_subnet_name, "proxy-only-subnet-${var.app}-${var.environment}")
 
   enable_legacy_ingress = var.enable_legacy_ingress
 
