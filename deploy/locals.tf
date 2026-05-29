@@ -46,7 +46,7 @@ locals {
     RATE_LIMIT                               = "5/10m"
     AWS_REQUEST_CHECKSUM_CALCULATION         = "when_required"
     SNOWSTORM_DEPLOYMENT_URL                 = var.snowstorm_deployment_url
-    MAINTAIN_PATIENT_PHONE_NUMBER_IDENTIFIER = "true"
+    MAINTAIN_PATIENT_PHONE_NUMBER_IDENTIFIER = "True"
     ADDITIONAL_PLUGS                         = var.additional_plugs
   }, var.additional_config_map_data)
 
