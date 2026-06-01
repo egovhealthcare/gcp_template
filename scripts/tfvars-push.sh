@@ -67,19 +67,24 @@ if [[ -z "$SECRET_NAME" ]]; then
   SECRET_NAME="tofu-tfvars-${ENV_NAME}"
 fi
 
-echo "Checking tfvars formatting..."
-tofu fmt -check "$TFVARS_FILE" >/dev/null
+echo "Formatting tfvars..."
+tofu fmt "$TFVARS_FILE" >/dev/null
+echo "Verifying tfvars formatting..."
+if ! tofu fmt -check "$TFVARS_FILE" >/dev/null 2>&1; then
+  echo "ERROR: '$TFVARS_FILE' is still not properly formatted after 'tofu fmt'. Please fix manually."
+  exit 1
+fi
 
 if gcloud secrets describe "$SECRET_NAME" --project="$PROJECT_ID" >/dev/null 2>&1; then
-  echo "Secret '$SECRET_NAME' exists. Adding a new version..."
+  echo "Secret '$SECRET_NAME' exists (project: $PROJECT_ID). Adding a new version..."
 else
-  echo "Creating secret '$SECRET_NAME'..."
+  echo "Creating secret '$SECRET_NAME' (project: $PROJECT_ID)..."
   gcloud secrets create "$SECRET_NAME" \
     --project="$PROJECT_ID" \
     --replication-policy=automatic
 fi
 
-echo "Uploading tfvars..."
+echo "Uploading tfvars to project '$PROJECT_ID'..."
 gcloud secrets versions add "$SECRET_NAME" \
   --project="$PROJECT_ID" \
   --data-file="$TFVARS_FILE" >/dev/null
@@ -96,4 +101,4 @@ if [[ "$LOCAL_SHA" != "$REMOTE_SHA" ]]; then
   exit 1
 fi
 
-echo "OK: tfvars uploaded and verified for secret '$SECRET_NAME'."
+echo "OK: tfvars uploaded and verified for secret '$SECRET_NAME' (project: $PROJECT_ID)."
