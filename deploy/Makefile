@@ -20,6 +20,7 @@ APPROVE_FLAG := $(if $(filter true,$(AUTO_APPROVE)),-auto-approve)
 pull-tfvars:
 	@test -n "$(PROJECT_ID)" || (echo "ERROR: PROJECT_ID (or TF_VAR_project_id) is required" && exit 1)
 	@test -n "$(ENV_NAME)" || (echo "ERROR: ENV_NAME (or TF_VAR_environment) is required" && exit 1)
+	@echo "[pull-tfvars] project=$(PROJECT_ID) env=$(ENV_NAME) secret=$(TFVARS_SECRET_NAME)"
 	@../scripts/tfvars-pull.sh \
 		--project="$(PROJECT_ID)" \
 		--env="$(ENV_NAME)" \
@@ -29,6 +30,7 @@ pull-tfvars:
 push-tfvars:
 	@test -n "$(PROJECT_ID)" || (echo "ERROR: PROJECT_ID (or TF_VAR_project_id) is required" && exit 1)
 	@test -n "$(ENV_NAME)" || (echo "ERROR: ENV_NAME (or TF_VAR_environment) is required" && exit 1)
+	@echo "[push-tfvars] project=$(PROJECT_ID) env=$(ENV_NAME) secret=$(TFVARS_SECRET_NAME)"
 	@../scripts/tfvars-push.sh \
 		--project="$(PROJECT_ID)" \
 		--env="$(ENV_NAME)" \
