@@ -216,9 +216,27 @@ variable "jwks_base64" {
 }
 
 variable "helm_config" {
-  description = "Helm image/release configuration per service"
-  type        = map(map(string))
-  default     = {}
+  description = "Helm image/release configuration per service."
+  type = object({
+    care_backend = object({
+      repository                  = string
+      tag                         = string
+      api_replica_count           = optional(number, 2)
+      celery_worker_replica_count = optional(number, 1)
+    })
+    care_frontend = object({
+      repository = string
+      tag        = string
+    })
+    metabase = object({
+      repository = string
+      tag        = string
+    })
+    redis = object({
+      repository = string
+      tag        = string
+    })
+  })
 }
 
 variable "additional_secrets" {
