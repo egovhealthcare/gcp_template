@@ -124,13 +124,14 @@ locals {
       tag        = var.helm_config.care_backend.tag
     }
     api = {
-      replicaCount = 2
+      replicaCount = var.helm_config.care_backend.api_replica_count
       podAnnotations = {
         "checksum/external-secret" = local.care_backend_secret_checksum
         "checksum/external-config" = local.care_backend_config_checksum
       }
     }
     celeryWorker = {
+      replicaCount = var.helm_config.care_backend.celery_worker_replica_count
       podAnnotations = {
         "checksum/external-secret" = local.care_backend_secret_checksum
         "checksum/external-config" = local.care_backend_config_checksum
