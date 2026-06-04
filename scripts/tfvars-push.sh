@@ -63,6 +63,27 @@ done
 [[ -n "$TFVARS_FILE" ]] || { echo "ERROR: --file is required"; usage; }
 [[ -f "$TFVARS_FILE" ]] || { echo "ERROR: File not found: $TFVARS_FILE"; exit 1; }
 
+# Safety check: Project ID
+TFVARS_PROJECT_ID="$(
+  grep -E '^[[:space:]]*project_id[[:space:]]*=' "$TFVARS_FILE" \
+    | head -n1 \
+    | sed -E 's/^[[:space:]]*project_id[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/'
+)"
+
+if [[ -z "$TFVARS_PROJECT_ID" ]]; then
+  echo "ERROR: Could not find a 'project_id = \"...\"' entry in $TFVARS_FILE."
+  echo "       Refusing to push without verifying project alignment."
+  exit 1
+fi
+
+if [[ "$TFVARS_PROJECT_ID" != "$PROJECT_ID" ]]; then
+  echo "ERROR: project_id mismatch — refusing to push."
+  echo "       --project argument : $PROJECT_ID"
+  echo "       project_id in file : $TFVARS_PROJECT_ID  ($TFVARS_FILE)"
+  echo "       This guard prevents pushing tfvars from one project into another."
+  exit 1
+fi
+
 if [[ -z "$SECRET_NAME" ]]; then
   SECRET_NAME="tofu-tfvars-${ENV_NAME}"
 fi
