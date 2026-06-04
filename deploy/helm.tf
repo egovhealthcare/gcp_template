@@ -6,7 +6,7 @@ resource "helm_release" "gateway" {
   # create_namespace = true
 
   values = [
-    yamlencode(merge(local.common_helm_values, local.gateway_values))
+    yamlencode(merge(local.common_helm_values, local.gateway_values, { chartHash = local.chart_hashes.gateway }))
   ]
 
   depends_on = [
@@ -71,7 +71,7 @@ resource "helm_release" "redis" {
   # create_namespace = true
 
   values = [
-    yamlencode(local.redis_values)
+    yamlencode(merge(local.redis_values, { chartHash = local.chart_hashes.redis }))
   ]
 
   lifecycle {
@@ -87,7 +87,7 @@ resource "helm_release" "metabase" {
   # create_namespace = true
 
   values = [
-    yamlencode(merge(local.common_helm_values, local.metabase_values)),
+    yamlencode(merge(local.common_helm_values, local.metabase_values, { chartHash = local.chart_hashes.metabase })),
   ]
 
   depends_on = [
@@ -110,7 +110,7 @@ resource "helm_release" "care_backend" {
   # create_namespace = true
 
   values = [
-    yamlencode(merge(local.common_helm_values, local.care_backend_values)),
+    yamlencode(merge(local.common_helm_values, local.care_backend_values, { chartHash = local.chart_hashes.care_be })),
   ]
 
   depends_on = [
@@ -130,7 +130,7 @@ resource "helm_release" "care_frontend" {
   # create_namespace = true
 
   values = [
-    yamlencode(merge(local.common_helm_values, local.care_frontend_values))
+    yamlencode(merge(local.common_helm_values, local.care_frontend_values, { chartHash = local.chart_hashes.care_fe }))
   ]
 
   depends_on = [
@@ -150,7 +150,7 @@ resource "helm_release" "dcm4chee" {
   timeout   = 600
 
   values = [
-    yamlencode(merge(local.common_helm_values, local.dcm4chee_values)),
+    yamlencode(merge(local.common_helm_values, local.dcm4chee_values, { chartHash = local.chart_hashes.dcm4chee })),
   ]
 
   depends_on = [

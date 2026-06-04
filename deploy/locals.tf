@@ -18,6 +18,15 @@ locals {
   namespace_name              = coalesce(var.namespace_name, var.environment)
   app_name                    = var.app
   environment                 = var.environment
+
+  chart_hashes = {
+    for name in ["gateway", "redis", "metabase", "care_be", "care_fe", "dcm4chee"] :
+    name => sha1(join("", [
+      for f in sort(fileset("${path.module}/../helm_charts/${name}", "**")) :
+      filesha1("${path.module}/../helm_charts/${name}/${f}")
+    ]))
+  }
+
   gateway_name                = "care-regional-gateway"
   certmanager_tls_secret_name = "${var.org}-${var.app}-${var.environment}-gateway-tls"
   external_tls_secret_name    = "${var.org}-${var.app}-${var.environment}-external-tls"
