@@ -15,6 +15,10 @@ resource "helm_release" "gateway" {
     kubernetes_secret.gateway_tls_placeholder,
     kubernetes_secret.external_tls,
   ]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 # cert-manager: Installs cert-manager controller + CRDs from Jetstack Helm repo
@@ -53,6 +57,10 @@ resource "helm_release" "cert_manager" {
   #   name  = "extraArgs[0]"
   #   value = "--acme-http01-solver-nameservers=8.8.8.8:53\\,1.1.1.1:53"
   # }
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 # Helm Chart for Redis Deployment
@@ -65,6 +73,10 @@ resource "helm_release" "redis" {
   values = [
     yamlencode(local.redis_values)
   ]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 # Helm Chart for Metabase Deployment
 resource "helm_release" "metabase" {
@@ -82,6 +94,10 @@ resource "helm_release" "metabase" {
     helm_release.gateway,
     kubernetes_secret.metabase,
   ]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 # Helm Chart for Care Backend Deployment
@@ -101,6 +117,10 @@ resource "helm_release" "care_backend" {
     helm_release.gateway,
     kubernetes_secret.care_backend,
   ]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 # Helm Chart for Care Frontend Deployment
 resource "helm_release" "care_frontend" {
@@ -116,6 +136,10 @@ resource "helm_release" "care_frontend" {
   depends_on = [
     helm_release.gateway,
   ]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 resource "helm_release" "dcm4chee" {
@@ -134,6 +158,10 @@ resource "helm_release" "dcm4chee" {
     helm_release.care_backend,
     kubernetes_secret.dcm4chee,
   ]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 resource "tls_private_key" "gateway_placeholder" {
