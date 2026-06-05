@@ -53,7 +53,7 @@ module "cloudsql" {
   tier             = var.cloudsql_tier
 
   # High availability and disk configuration
-  availability_type = "REGIONAL"
+  availability_type = var.cloudsql_availability_type
   disk_type         = "PD_SSD"
   disk_size         = var.cloudsql_disk_size
   disk_autoresize   = true
@@ -217,7 +217,7 @@ module "metabase_cloudsql" {
   tier             = var.metabase_cloudsql_tier
 
   # High availability and disk configuration
-  availability_type = "REGIONAL"
+  availability_type = "ZONAL"
   disk_type         = "PD_SSD"
   disk_size         = var.metabase_cloudsql_disk_size
   disk_autoresize   = true
