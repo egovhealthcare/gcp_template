@@ -89,37 +89,48 @@ variable "proxy_only_subnet_cidr" {
 variable "cloudsql_tier" {
   description = "Cloud SQL primary instance tier"
   type        = string
-  default     = null
+  default     = "db-custom-2-3840"
+}
+
+variable "cloudsql_availability_type" {
+  description = "Cloud SQL primary availability type: REGIONAL (HA, with standby in another zone) or ZONAL (no HA, single zone)."
+  type        = string
+  default     = "ZONAL"
+
+  validation {
+    condition     = contains(["REGIONAL", "ZONAL"], var.cloudsql_availability_type)
+    error_message = "cloudsql_availability_type must be either \"REGIONAL\" or \"ZONAL\"."
+  }
 }
 
 variable "cloudsql_disk_size" {
   description = "Cloud SQL disk size"
   type        = any
-  default     = null
+  default     = 10
 }
 
 variable "cloudsql_read_replica_count" {
   description = "Cloud SQL read replica count"
   type        = any
-  default     = 0
+  default     = 1
 }
 
 variable "cloudsql_read_replica_tier" {
   description = "Cloud SQL read replica tier"
   type        = string
-  default     = null
+  default     = "db-custom-1-3840"
 }
 
 variable "metabase_cloudsql_tier" {
   description = "Cloud SQL tier for Metabase"
   type        = string
-  default     = null
+  default     = "db-f1-micro"
 }
 
 variable "metabase_cloudsql_disk_size" {
   description = "Cloud SQL disk size for Metabase"
   type        = any
-  default     = null
+  default     = 10
 }
 
 variable "service_account_email" {
