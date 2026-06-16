@@ -240,12 +240,12 @@ variable "helm_config" {
       tag        = string
     })
     metabase = object({
-      repository = string
-      tag        = string
+      repository = optional(string, "metabase/metabase")
+      tag        = optional(string, "v0.61.x")
     })
     redis = object({
-      repository = string
-      tag        = string
+      repository = optional(string, "redis")
+      tag        = optional(string, "8-alpine")
     })
   })
 }
