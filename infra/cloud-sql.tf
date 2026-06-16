@@ -255,6 +255,10 @@ module "metabase_cloudsql" {
     {
       name  = "log_temp_files"
       value = "0"
+    },
+    {
+      name  = "cloudsql.enable_pg_cron"
+      value = "on"
     }
   ]
 
@@ -297,6 +301,14 @@ module "metabase_cloudsql" {
 
   user_name     = "metabase_${var.environment}_user"
   user_password = random_password.metabase_database_master.result
+
+  additional_databases = [
+    {
+      name      = "metabase_warehouse"
+      charset   = "UTF8"
+      collation = "en_US.UTF8"
+    },
+  ]
 
   # No read replicas for metabase
   read_replicas = []
