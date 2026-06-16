@@ -44,19 +44,20 @@ locals {
   }
 
   config_map_data = merge({
-    POSTGRES_PORT                            = 5432
-    DJANGO_SECURE_SSL_REDIRECT               = "False"
-    DJANGO_SETTINGS_MODULE                   = "config.settings.production"
-    BUCKET_PROVIDER                          = "gcp"
-    BUCKET_REGION                            = var.region
-    CSRF_TRUSTED_ORIGINS                     = jsonencode(concat([for d in var.web_domain_name : "https://${d}"], [for d in var.api_domain_name : "https://${d}"]))
-    DJANGO_ALLOWED_HOSTS                     = jsonencode(["*"])
-    CORS_ALLOWED_ORIGINS                     = jsonencode([for d in var.web_domain_name : "https://${d}"])
-    RATE_LIMIT                               = "5/10m"
-    AWS_REQUEST_CHECKSUM_CALCULATION         = "when_required"
-    SNOWSTORM_DEPLOYMENT_URL                 = var.snowstorm_deployment_url
-    MAINTAIN_PATIENT_PHONE_NUMBER_IDENTIFIER = "True"
-    ADDITIONAL_PLUGS                         = var.additional_plugs
+    POSTGRES_PORT                                 = 5432
+    DJANGO_SECURE_SSL_REDIRECT                    = "False"
+    DJANGO_SETTINGS_MODULE                        = "config.settings.production"
+    BUCKET_PROVIDER                               = "gcp"
+    BUCKET_REGION                                 = var.region
+    CSRF_TRUSTED_ORIGINS                          = jsonencode(concat([for d in var.web_domain_name : "https://${d}"], [for d in var.api_domain_name : "https://${d}"]))
+    DJANGO_ALLOWED_HOSTS                          = jsonencode(["*"])
+    CORS_ALLOWED_ORIGINS                          = jsonencode([for d in var.web_domain_name : "https://${d}"])
+    RATE_LIMIT                                    = "5/10m"
+    AWS_REQUEST_CHECKSUM_CALCULATION              = "when_required"
+    SNOWSTORM_DEPLOYMENT_URL                      = var.snowstorm_deployment_url
+    MAINTAIN_PATIENT_PHONE_NUMBER_IDENTIFIER      = "True"
+    MAX_ACTIVE_ENCOUNTERS_PER_PATIENT_IN_FACILITY = "1"
+    ADDITIONAL_PLUGS                              = var.additional_plugs
   }, var.additional_config_map_data)
 
   secret_data = merge({
