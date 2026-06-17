@@ -12,7 +12,7 @@ variable "project_number" {
 variable "region" {
   description = "GCP region"
   type        = string
-  default     = "us-central1"
+  default     = "asia-south1"
 }
 
 variable "backend_bucket" {
