@@ -62,6 +62,8 @@ locals {
     SCRIBE_GOOGLE_PROJECT_ID = var.project_id
     SCRIBE_GOOGLE_LOCATION   = var.region
     SCRIBE_API_PROVIDER      = "google"
+    SCRIBE_CHAT_MODEL_NAME   = "gemini-2.5-flash"
+    SCRIBE_TNC               = "1. Data Storage and Privacy: All patient data will be stored on state-owned cloud infrastructure managed by the Health Department.<br/><br/>2. User Responsibility: CARE Scribe is a supportive data entry tool. All transcriptions must be solely reviewed and confirmed by the attending doctor or nurse. eGov will not, and does not undertake any responsibility or liability to review and confirm the transcripts of the audio data entered into the tool, and shall bear no liability for errors arising from unverified AI-generated content.<br/><br/>3. Access Control: Access to CARE Scribe (including for use of the tool and the transcripts) will be limited to authorized users via secure, role-based authentication, which shall be the responsibility of the Health Department. All usage will be subject to periodic audit and monitoring.<br/><br/>4. Legal and Security Compliance: All data processing will be fully compliant with applicable data protection laws.<br/><br/>5. Third-party Service Dependency: CARE Scribe relies on third-party AI APIs for transcription. eGov does not provide any warranties regarding the same, and will not be liable for service disruptions, inaccuracies, or changes originating from these external providers."
   } : {}, var.additional_config_map_data)
 
   secret_data = merge({
