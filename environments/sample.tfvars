@@ -109,9 +109,6 @@ additional_secrets = {
 # Extra non-secret config injected into ConfigMaps.
 additional_config_map_data = {
   EXAMPLE_FEATURE_FLAG = "true"
-  # When enable_scribe = true, these are required:
-  # SCRIBE_CHAT_MODEL_NAME = "gemini-2.5-flash"
-  # SCRIBE_TNC             = "Your terms and conditions text here"
 }
 
 # Optional name overrides to preserve legacy resource names during migration.

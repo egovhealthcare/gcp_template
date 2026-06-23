@@ -1,11 +1,3 @@
-# -----------------------------------------------------------------------------
-# Scribe AI — Dedicated service account for Vertex AI
-# Created only when var.enable_scribe is true.
-#
-# A SA key is generated and passed as GOOGLE_APPLICATION_CREDENTIALS_B64 to the
-# backend pods. The SA only has roles/aiplatform.user — no other permissions.
-# -----------------------------------------------------------------------------
-
 locals {
   scribe_sa_name = coalesce(var.scribe_sa_name, "gemini-scribe")
 }
