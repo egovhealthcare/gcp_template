@@ -151,3 +151,11 @@ output "github_wif_provider_name" {
   description = "Full resource name of the GitHub WIF provider (for GitHub Actions auth)"
   value       = try(google_iam_workload_identity_pool_provider.github[0].name, "")
 }
+
+# --- Scribe Outputs ---
+
+output "scribe_sa_key_b64" {
+  description = "Base64-encoded service account JSON key for Scribe (only has aiplatform.user)"
+  value       = try(google_service_account_key.scribe[0].private_key, "")
+  sensitive   = true
+}

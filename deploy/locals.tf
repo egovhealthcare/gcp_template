@@ -58,7 +58,11 @@ locals {
     MAINTAIN_PATIENT_PHONE_NUMBER_IDENTIFIER      = "True"
     MAX_ACTIVE_ENCOUNTERS_PER_PATIENT_IN_FACILITY = "1"
     ADDITIONAL_PLUGS                              = var.additional_plugs
-  }, var.additional_config_map_data)
+  }, var.enable_scribe ? {
+    SCRIBE_GOOGLE_PROJECT_ID = var.project_id
+    SCRIBE_GOOGLE_LOCATION   = var.region
+    SCRIBE_API_PROVIDER      = "google"
+  } : {}, var.additional_config_map_data)
 
   secret_data = merge({
     DJANGO_SECRET_KEY           = data.terraform_remote_state.keys.outputs.django_secret_key
@@ -77,7 +81,9 @@ locals {
     JWKS_BASE64                 = var.jwks_base64
     FILE_UPLOAD_BUCKET_ENDPOINT = "https://storage.googleapis.com"
     FACILITY_S3_BUCKET_ENDPOINT = "https://storage.googleapis.com"
-  }, var.additional_secrets)
+  }, var.enable_scribe ? {
+    GOOGLE_APPLICATION_CREDENTIALS_B64 = data.terraform_remote_state.infra.outputs.scribe_sa_key_b64
+  } : {}, var.additional_secrets)
 
   common_helm_values = {
     global = {

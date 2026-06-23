@@ -365,6 +365,18 @@ variable "snowstorm_deployment_url" {
   default     = "https://terminology.10bedicu.in/fhir"
 }
 
+variable "enable_scribe" {
+  description = "Enable AI Scribe stack (Vertex AI service account and configuration)"
+  type        = bool
+  default     = false
+}
+
+variable "scribe_sa_name" {
+  description = "Override for the Scribe Vertex AI service account ID. Defaults to gemini-scribe."
+  type        = string
+  default     = null
+}
+
 variable "external_tls_cert" {
   description = "PEM-encoded TLS certificate (e.g. wildcard *.example.org) provided externally"
   type        = string
