@@ -58,7 +58,9 @@ locals {
     MAINTAIN_PATIENT_PHONE_NUMBER_IDENTIFIER      = "True"
     MAX_ACTIVE_ENCOUNTERS_PER_PATIENT_IN_FACILITY = "1"
     ADDITIONAL_PLUGS                              = var.additional_plugs
-  }, var.additional_config_map_data)
+  }, var.additional_config_map_data, var.enable_dicom ? {
+    CARE_RADIOLOGY_DCM4CHEE_DICOMWEB_BASEURL = "http://dcm4chee-arc.${local.namespace_name}.svc.cluster.local:8080/dcm4chee-arc/aets/DCM4CHEE"
+  } : {})
 
   secret_data = merge({
     DJANGO_SECRET_KEY           = data.terraform_remote_state.keys.outputs.django_secret_key
@@ -77,7 +79,9 @@ locals {
     JWKS_BASE64                 = var.jwks_base64
     FILE_UPLOAD_BUCKET_ENDPOINT = "https://storage.googleapis.com"
     FACILITY_S3_BUCKET_ENDPOINT = "https://storage.googleapis.com"
-  }, var.additional_secrets)
+  }, var.additional_secrets, var.enable_dicom ? {
+    CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret.result
+  } : {})
 
   common_helm_values = {
     global = {
@@ -115,7 +119,8 @@ locals {
     DATABASE_URL        = data.terraform_remote_state.infra.outputs.dicom_connection_string
     LDAP_ADMIN_PASSWORD = random_password.ldap_admin_password.result
     DICOM_BUCKET_NAME   = data.terraform_remote_state.infra.outputs.dicom_bucket_name
-    GCS_ACCESS_KEY      = data.terraform_remote_state.infra.outputs.gcs_access_key
-    GCS_SECRET_KEY      = data.terraform_remote_state.infra.outputs.gcs_secret_key
+    GCS_ACCESS_KEY                = data.terraform_remote_state.infra.outputs.gcs_access_key
+    GCS_SECRET_KEY                = data.terraform_remote_state.infra.outputs.gcs_secret_key
+    CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret.result
   } : {}
 }
