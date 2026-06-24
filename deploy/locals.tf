@@ -80,7 +80,7 @@ locals {
     FILE_UPLOAD_BUCKET_ENDPOINT = "https://storage.googleapis.com"
     FACILITY_S3_BUCKET_ENDPOINT = "https://storage.googleapis.com"
   }, var.additional_secrets, var.enable_dicom ? {
-    CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret.result
+    CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret[0].result
   } : {})
 
   common_helm_values = {
@@ -121,6 +121,6 @@ locals {
     DICOM_BUCKET_NAME   = data.terraform_remote_state.infra.outputs.dicom_bucket_name
     GCS_ACCESS_KEY                = data.terraform_remote_state.infra.outputs.gcs_access_key
     GCS_SECRET_KEY                = data.terraform_remote_state.infra.outputs.gcs_secret_key
-    CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret.result
+    CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret[0].result
   } : {}
 }
