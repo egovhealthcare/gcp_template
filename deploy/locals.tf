@@ -58,6 +58,7 @@ locals {
     MAINTAIN_PATIENT_PHONE_NUMBER_IDENTIFIER      = "True"
     MAX_ACTIVE_ENCOUNTERS_PER_PATIENT_IN_FACILITY = "1"
     ADDITIONAL_PLUGS                              = var.additional_plugs
+    AUDIT_LOG_ENABLED                             = "True"
   }, var.enable_scribe ? {
     SCRIBE_GOOGLE_PROJECT_ID = var.project_id
     SCRIBE_GOOGLE_LOCATION   = var.region
