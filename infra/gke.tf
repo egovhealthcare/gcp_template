@@ -25,6 +25,9 @@ module "gke_cluster" {
   # Enable Gateway API for regional external Application Load Balancer
   gateway_api_channel = "CHANNEL_STANDARD"
 
+  # Explicit logging configuration
+  logging_service = "logging.googleapis.com/kubernetes"
+
   # release channel
   release_channel = "STABLE"
 

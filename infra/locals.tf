@@ -33,10 +33,12 @@ locals {
   gateway_ip_name          = coalesce(var.gateway_ip_name, "care-pip-${var.app}-${var.environment}")
   legacy_ingress_ip_name   = coalesce(var.legacy_ingress_ip_name, "care-pip")
   legacy_fe_ip_name        = coalesce(var.legacy_fe_ip_name, "care-fe")
-  flow_logs_bucket         = coalesce(var.flow_logs_bucket, "${var.org}-${var.environment}-vpc-flow-logs")
   cloudsql_private_ip_name = coalesce(var.cloudsql_private_ip_name, "cloudsql-private-ip-${var.app}-${var.environment}")
   nat_ip_address_name      = coalesce(var.nat_ip_address_name, "nat-ip-${var.app}-${var.environment}")
   proxy_only_subnet_name   = coalesce(var.proxy_only_subnet_name, "proxy-only-subnet-${var.app}-${var.environment}")
+
+  logs_bucket_name   = coalesce(var.logs_bucket, "${var.org}-${var.environment}-${var.app}-logs")
+  logging_bucket_id  = "${var.org}-${var.app}-${var.environment}-logging"
 
   enable_legacy_ingress = var.enable_legacy_ingress
 

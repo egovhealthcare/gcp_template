@@ -92,17 +92,3 @@ resource "google_compute_global_address" "services_range" {
   prefix_length = 20
   network       = module.vpc.network_self_link
 }
-
-module "vpc_flow_logs_bucket" {
-  source  = "terraform-google-modules/cloud-storage/google"
-  version = "~> 10.0"
-
-  project_id = var.project_id
-  location   = var.region
-  names      = [local.flow_logs_bucket]
-
-  # Enforce uniform bucket-level access (no ACLs)
-  bucket_policy_only = {
-    (local.flow_logs_bucket) = true
-  }
-}
