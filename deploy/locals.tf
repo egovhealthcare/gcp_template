@@ -58,7 +58,8 @@ locals {
     MAINTAIN_PATIENT_PHONE_NUMBER_IDENTIFIER      = "True"
     MAX_ACTIVE_ENCOUNTERS_PER_PATIENT_IN_FACILITY = "1"
     ADDITIONAL_PLUGS                              = var.additional_plugs
-    }, var.additional_config_map_data, var.enable_dicom ? {
+    AUDIT_LOG_ENABLED                             = "True"
+  }, var.additional_config_map_data, var.enable_dicom ? {
     CARE_RADIOLOGY_DCM4CHEE_DICOMWEB_BASEURL = "http://dcm4chee-arc.${local.namespace_name}.svc.cluster.local:8080/dcm4chee-arc/aets/DCM4CHEE"
   } : {})
 
