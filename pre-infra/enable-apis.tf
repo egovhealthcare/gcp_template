@@ -26,7 +26,9 @@ module "project_services" {
     var.enable_github_wif ? [
       "iamcredentials.googleapis.com",
     ] : [],
-    # "aiplatform.googleapis.com", # in case scribe is needed
+    var.enable_scribe ? [
+      "aiplatform.googleapis.com",
+    ] : [],
   )
 
   enable_apis                 = true

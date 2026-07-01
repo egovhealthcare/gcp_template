@@ -61,6 +61,7 @@ enable_dicom          = false
 enable_legacy_ingress = false
 enable_cloud_armor    = true
 enable_github_wif     = false
+enable_scribe         = false
 
 # Service account used by workloads/automation where applicable.
 service_account_email = "iac-tofu@example-project-id.iam.gserviceaccount.com"
