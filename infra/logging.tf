@@ -24,6 +24,23 @@ resource "google_logging_project_bucket_config" "default" {
   locked         = false
 }
 
+# Disable the built-in _Default sink so no logs are routed to the global _Default bucket.
+# Note: must be imported on first apply: tofu import 'google_logging_project_sink.default_sink[0]' projects/e-govt-foundation/sinks/_Default
+resource "google_logging_project_sink" "default_sink" {
+  count = var.enable_log_export ? 1 : 0
+
+  name     = "_Default"
+  project  = var.project_id
+  disabled = true
+
+  destination            = "logging.googleapis.com/projects/${var.project_id}/locations/global/buckets/_Default"
+  unique_writer_identity = false
+
+  lifecycle {
+    ignore_changes = [destination, unique_writer_identity, filter, description, exclusions]
+  }
+}
+
 # Provision the Cloud Logging CMEK service account by reading project CMEK settings.
 # This call to GetCmekSettings generates the SA if it doesn't already exist.
 data "google_logging_project_cmek_settings" "default" {
@@ -52,16 +69,15 @@ resource "google_logging_project_sink" "all_logs_to_gcs" {
 }
 
 # Sink: ALL logs → Regional Cloud Logging bucket (live querying in India)
-# unique_writer_identity is false because the destination is a logging bucket
-# in the same project — the default Cloud Logging service agent already has
-# the necessary permissions.
+# The writer_identity is unused because the destination is a same-project
+# logging bucket — the default Cloud Logging service agent has implicit access.
 resource "google_logging_project_sink" "all_logs_to_regional" {
   count = var.enable_log_export ? 1 : 0
 
   name                   = "all-logs-to-regional"
   project                = var.project_id
   destination            = "logging.googleapis.com/projects/${var.project_id}/locations/${var.region}/buckets/${local.logging_bucket_id}"
-  unique_writer_identity = false
+  unique_writer_identity = true
 
   # Empty filter = match ALL logs
 
