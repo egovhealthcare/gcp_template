@@ -59,7 +59,16 @@ locals {
     MAX_ACTIVE_ENCOUNTERS_PER_PATIENT_IN_FACILITY = "1"
     ADDITIONAL_PLUGS                              = var.additional_plugs
     AUDIT_LOG_ENABLED                             = "True"
-  }, var.additional_config_map_data)
+    }, var.enable_scribe ? {
+    SCRIBE_GOOGLE_PROJECT_ID     = var.project_id
+    SCRIBE_GOOGLE_LOCATION       = var.region
+    SCRIBE_CHAT_MODEL_NAME       = "google/gemini-2.5-flash"
+    SCRIBE_TRANSCRIBE_MODEL_NAME = "google/gemini-2.5-flash"
+    SCRIBE_TRANSCRIBE_LANGUAGE   = "en-US"
+    SCRIBE_TNC                   = "1. Data Storage and Privacy: All patient data will be stored on state-owned cloud infrastructure managed by the Health Department.<br/><br/>2. User Responsibility: CARE Scribe is a supportive data entry tool. All transcriptions must be solely reviewed and confirmed by the attending doctor or nurse. eGov will not, and does not undertake any responsibility or liability to review and confirm the transcripts of the audio data entered into the tool, and shall bear no liability for errors arising from unverified AI-generated content.<br/><br/>3. Access Control: Access to CARE Scribe (including for use of the tool and the transcripts) will be limited to authorized users via secure, role-based authentication, which shall be the responsibility of the Health Department. All usage will be subject to periodic audit and monitoring.<br/><br/>4. Legal and Security Compliance: All data processing will be fully compliant with applicable data protection laws.<br/><br/>5. Third-party Service Dependency: CARE Scribe relies on third-party AI APIs for transcription. eGov does not provide any warranties regarding the same, and will not be liable for service disruptions, inaccuracies, or changes originating from these external providers."
+    } : {}, var.additional_config_map_data, var.enable_dicom ? {
+    CARE_RADIOLOGY_DCM4CHEE_DICOMWEB_BASEURL = "http://dcm4chee-arc.${local.namespace_name}.svc.cluster.local:8080/dcm4chee-arc/aets/DCM4CHEE"
+  } : {})
 
   secret_data = merge({
     DJANGO_SECRET_KEY           = data.terraform_remote_state.keys.outputs.django_secret_key
@@ -78,7 +87,11 @@ locals {
     JWKS_BASE64                 = var.jwks_base64
     FILE_UPLOAD_BUCKET_ENDPOINT = "https://storage.googleapis.com"
     FACILITY_S3_BUCKET_ENDPOINT = "https://storage.googleapis.com"
-  }, var.additional_secrets)
+    }, var.enable_scribe ? {
+    SCRIBE_GOOGLE_APPLICATION_CREDENTIALS_B64 = data.terraform_remote_state.infra.outputs.scribe_sa_key_b64
+    } : {}, var.additional_secrets, var.enable_dicom ? {
+    CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret[0].result
+  } : {})
 
   common_helm_values = {
     global = {
@@ -113,14 +126,15 @@ locals {
 
   # DICOM secret data (only evaluated when enable_dicom = true)
   dicom_secret_data = var.enable_dicom ? {
-    POSTGRES_DB         = data.terraform_remote_state.infra.outputs.dicom_database_name
-    POSTGRES_USER       = data.terraform_remote_state.infra.outputs.dicom_database_user
-    POSTGRES_PASSWORD   = data.terraform_remote_state.infra.outputs.dicom_database_password
-    POSTGRES_HOST       = data.terraform_remote_state.infra.outputs.instance_address
-    DATABASE_URL        = data.terraform_remote_state.infra.outputs.dicom_connection_string
-    LDAP_ADMIN_PASSWORD = random_password.ldap_admin_password.result
-    DICOM_BUCKET_NAME   = data.terraform_remote_state.infra.outputs.dicom_bucket_name
-    GCS_ACCESS_KEY      = data.terraform_remote_state.infra.outputs.gcs_access_key
-    GCS_SECRET_KEY      = data.terraform_remote_state.infra.outputs.gcs_secret_key
+    POSTGRES_DB                   = data.terraform_remote_state.infra.outputs.dicom_database_name
+    POSTGRES_USER                 = data.terraform_remote_state.infra.outputs.dicom_database_user
+    POSTGRES_PASSWORD             = data.terraform_remote_state.infra.outputs.dicom_database_password
+    POSTGRES_HOST                 = data.terraform_remote_state.infra.outputs.instance_address
+    DATABASE_URL                  = data.terraform_remote_state.infra.outputs.dicom_connection_string
+    LDAP_ADMIN_PASSWORD           = random_password.ldap_admin_password.result
+    DICOM_BUCKET_NAME             = data.terraform_remote_state.infra.outputs.dicom_bucket_name
+    GCS_ACCESS_KEY                = data.terraform_remote_state.infra.outputs.gcs_access_key
+    GCS_SECRET_KEY                = data.terraform_remote_state.infra.outputs.gcs_secret_key
+    CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret[0].result
   } : {}
 }
