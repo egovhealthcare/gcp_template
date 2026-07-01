@@ -31,10 +31,10 @@ resource "google_compute_global_address" "cloudsql_private_ip" {
 }
 
 resource "google_service_networking_connection" "cloudsql_psa" {
-  network                    = module.vpc.network_self_link
-  service                    = "servicenetworking.googleapis.com"
-  reserved_peering_ranges    = [google_compute_global_address.cloudsql_private_ip.name]
-  update_on_creation_fail    = true
+  network                 = module.vpc.network_self_link
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.cloudsql_private_ip.name]
+  update_on_creation_fail = true
 }
 
 module "cloudsql" {

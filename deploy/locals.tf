@@ -15,9 +15,9 @@ locals {
   facility_bucket_name = data.terraform_remote_state.infra.outputs.facility_bucket_name
   writer_sa_email      = data.terraform_remote_state.infra.outputs.writer_service_account_email
 
-  namespace_name              = coalesce(var.namespace_name, var.environment)
-  app_name                    = var.app
-  environment                 = var.environment
+  namespace_name = coalesce(var.namespace_name, var.environment)
+  app_name       = var.app
+  environment    = var.environment
 
   chart_hashes = {
     for name in ["gateway", "redis", "metabase", "care_be", "care_fe", "dcm4chee"] :
@@ -59,7 +59,9 @@ locals {
     MAX_ACTIVE_ENCOUNTERS_PER_PATIENT_IN_FACILITY = "1"
     ADDITIONAL_PLUGS                              = var.additional_plugs
     AUDIT_LOG_ENABLED                             = "True"
-  }, var.additional_config_map_data)
+  }, var.additional_config_map_data, var.enable_dicom ? {
+    CARE_RADIOLOGY_DCM4CHEE_DICOMWEB_BASEURL = "http://dcm4chee-arc.${local.namespace_name}.svc.cluster.local:8080/dcm4chee-arc/aets/DCM4CHEE"
+  } : {})
 
   secret_data = merge({
     DJANGO_SECRET_KEY           = data.terraform_remote_state.keys.outputs.django_secret_key
@@ -78,7 +80,9 @@ locals {
     JWKS_BASE64                 = var.jwks_base64
     FILE_UPLOAD_BUCKET_ENDPOINT = "https://storage.googleapis.com"
     FACILITY_S3_BUCKET_ENDPOINT = "https://storage.googleapis.com"
-  }, var.additional_secrets)
+    }, var.additional_secrets, var.enable_dicom ? {
+    CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret[0].result
+  } : {})
 
   common_helm_values = {
     global = {
@@ -109,14 +113,15 @@ locals {
 
   # DICOM secret data (only evaluated when enable_dicom = true)
   dicom_secret_data = var.enable_dicom ? {
-    POSTGRES_DB         = data.terraform_remote_state.infra.outputs.dicom_database_name
-    POSTGRES_USER       = data.terraform_remote_state.infra.outputs.dicom_database_user
-    POSTGRES_PASSWORD   = data.terraform_remote_state.infra.outputs.dicom_database_password
-    POSTGRES_HOST       = data.terraform_remote_state.infra.outputs.instance_address
-    DATABASE_URL        = data.terraform_remote_state.infra.outputs.dicom_connection_string
-    LDAP_ADMIN_PASSWORD = random_password.ldap_admin_password.result
-    DICOM_BUCKET_NAME   = data.terraform_remote_state.infra.outputs.dicom_bucket_name
-    GCS_ACCESS_KEY      = data.terraform_remote_state.infra.outputs.gcs_access_key
-    GCS_SECRET_KEY      = data.terraform_remote_state.infra.outputs.gcs_secret_key
+    POSTGRES_DB                   = data.terraform_remote_state.infra.outputs.dicom_database_name
+    POSTGRES_USER                 = data.terraform_remote_state.infra.outputs.dicom_database_user
+    POSTGRES_PASSWORD             = data.terraform_remote_state.infra.outputs.dicom_database_password
+    POSTGRES_HOST                 = data.terraform_remote_state.infra.outputs.instance_address
+    DATABASE_URL                  = data.terraform_remote_state.infra.outputs.dicom_connection_string
+    LDAP_ADMIN_PASSWORD           = random_password.ldap_admin_password.result
+    DICOM_BUCKET_NAME             = data.terraform_remote_state.infra.outputs.dicom_bucket_name
+    GCS_ACCESS_KEY                = data.terraform_remote_state.infra.outputs.gcs_access_key
+    GCS_SECRET_KEY                = data.terraform_remote_state.infra.outputs.gcs_secret_key
+    CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret[0].result
   } : {}
 }
