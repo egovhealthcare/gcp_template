@@ -52,6 +52,7 @@ resource "kubernetes_secret" "external_tls" {
 }
 
 resource "random_password" "dicom_webhook_secret" {
+  count   = var.enable_dicom ? 1 : 0
   length  = 64
   special = false
 }
