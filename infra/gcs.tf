@@ -202,12 +202,12 @@ module "logs_bucket" {
   }
 
   # 7-year retention. `is_locked = false`
-  retention_policy = {
-    (local.logs_bucket_name) = {
-      retention_period = 220752000 # 7 years in seconds (2555 × 86400)
-      is_locked        = false
-    }
-  }
+  # retention_policy = {
+  #   (local.logs_bucket_name) = {
+  #     retention_period = 220752000 # 7 years in seconds (2555 × 86400)
+  #     is_locked        = false
+  #   }
+  # }
 
   lifecycle_rules = [{
     action = {
