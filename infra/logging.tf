@@ -24,12 +24,19 @@ resource "google_logging_project_bucket_config" "default" {
   locked         = false
 }
 
-# Grant KMS permissions to Cloud Logging service account
+# Provision the Cloud Logging CMEK service account by reading project CMEK settings.
+# This call to GetCmekSettings generates the SA if it doesn't already exist.
+data "google_logging_project_cmek_settings" "default" {
+  count   = var.enable_log_export ? 1 : 0
+  project = var.project_id
+}
+
+# Grant KMS permissions to Cloud Logging CMEK service account
 resource "google_kms_crypto_key_iam_member" "logging_sa_logs" {
   count         = var.enable_log_export ? 1 : 0
   crypto_key_id = local.logs_kms_key_id
   role          = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
-  member        = "serviceAccount:service-${var.project_number}@gcp-sa-logging.iam.gserviceaccount.com"
+  member        = "serviceAccount:${data.google_logging_project_cmek_settings.default[0].service_account_id}"
 }
 
 # Sink: ALL logs → GCS bucket (long-term archive)
@@ -45,13 +52,16 @@ resource "google_logging_project_sink" "all_logs_to_gcs" {
 }
 
 # Sink: ALL logs → Regional Cloud Logging bucket (live querying in India)
+# unique_writer_identity is false because the destination is a logging bucket
+# in the same project — the default Cloud Logging service agent already has
+# the necessary permissions.
 resource "google_logging_project_sink" "all_logs_to_regional" {
   count = var.enable_log_export ? 1 : 0
 
   name                   = "all-logs-to-regional"
   project                = var.project_id
   destination            = "logging.googleapis.com/projects/${var.project_id}/locations/${var.region}/buckets/${local.logging_bucket_id}"
-  unique_writer_identity = true
+  unique_writer_identity = false
 
   # Empty filter = match ALL logs
 
@@ -92,16 +102,4 @@ resource "google_storage_bucket_iam_member" "logs_sink_writer" {
   member = google_logging_project_sink.all_logs_to_gcs[0].writer_identity
 }
 
-# Regional sink writer → logging.bucketWriter on regional logging bucket
-resource "google_project_iam_member" "regional_sink_writer" {
-  count   = var.enable_log_export ? 1 : 0
-  project = var.project_id
-  role    = "roles/logging.bucketWriter"
-  member  = google_logging_project_sink.all_logs_to_regional[0].writer_identity
 
-  condition {
-    title       = "regional-logging-bucket-only"
-    description = "Restrict to the regional logging bucket"
-    expression  = "resource.name.endsWith(\"locations/${var.region}/buckets/${local.logging_bucket_id}\")"
-  }
-}
