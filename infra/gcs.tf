@@ -69,6 +69,9 @@ module "dicom_bucket" {
   bucket_policy_only = {
     (local.dicom_bucket_name) = true
   }
+  force_destroy = {
+    (local.dicom_bucket_name) = false
+  }
   cors = [
     {
       origin          = local.cors_origins
@@ -105,6 +108,9 @@ module "patient_bucket" {
   bucket_policy_only = {
     (local.patient_bucket_name) = true
   }
+  force_destroy = {
+    (local.patient_bucket_name) = false
+  }
   cors = [
     {
       origin          = local.cors_origins
@@ -132,6 +138,9 @@ module "facility_bucket" {
   )
   bucket_policy_only = {
     (local.facility_bucket_name) = true
+  }
+  force_destroy = {
+    (local.facility_bucket_name) = false
   }
   cors = [
     {

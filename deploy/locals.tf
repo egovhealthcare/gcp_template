@@ -15,9 +15,9 @@ locals {
   facility_bucket_name = data.terraform_remote_state.infra.outputs.facility_bucket_name
   writer_sa_email      = data.terraform_remote_state.infra.outputs.writer_service_account_email
 
-  namespace_name              = coalesce(var.namespace_name, var.environment)
-  app_name                    = var.app
-  environment                 = var.environment
+  namespace_name = coalesce(var.namespace_name, var.environment)
+  app_name       = var.app
+  environment    = var.environment
 
   chart_hashes = {
     for name in ["gateway", "redis", "metabase", "care_be", "care_fe", "dcm4chee"] :
