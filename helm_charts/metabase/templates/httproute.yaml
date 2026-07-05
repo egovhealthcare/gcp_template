@@ -22,6 +22,12 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Forwarded-Proto
+                value: https
       backendRefs:
         - name: {{ include "metabase.fullname" . }}
           port: {{ .Values.service.port }}
