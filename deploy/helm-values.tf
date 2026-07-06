@@ -84,6 +84,8 @@ locals {
       # Metabase ships with ~25% of container memory as heap by default,
       # which is too small for Liquibase migrations on newer versions.
       { name = "JAVA_TOOL_OPTIONS", value = "-Xmx2g" },
+      { name = "MB_AI_FEATURES_ENABLED", value = "false" },
+      { name = "MB_SITE_URL", value = "https://${var.metabase_domain_name[0]}" },
     ]
     envFromSecret = [
       { name = kubernetes_secret.metabase.metadata[0].name }
