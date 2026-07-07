@@ -1,8 +1,8 @@
 # --- GKE Outputs ---
 
-output "gke_endpoint" {
-  description = "The endpoint of the GKE cluster"
-  value       = module.gke_cluster.endpoint
+output "gke_dns_endpoint" {
+  description = "The DNS-based endpoint of the GKE cluster"
+  value       = module.gke_cluster.endpoint_dns
 }
 
 output "cluster_ca_certificate" {

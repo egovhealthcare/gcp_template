@@ -159,7 +159,7 @@ The deploy module also generates `random_password.ldap_admin_password` for the d
 ## Provider Authentication (deploy module)
 
 The `deploy/` module authenticates to GKE using:
-- `gke_endpoint` and `cluster_ca_certificate` from `infra` remote state
+- `gke_dns_endpoint` (DNS-based control plane endpoint) and `cluster_ca_certificate` from `infra` remote state
 - Access token from `data.google_client_config`
 
 Valid GCP credentials with cluster access are required.
