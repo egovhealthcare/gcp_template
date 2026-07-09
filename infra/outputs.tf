@@ -5,12 +5,6 @@ output "gke_dns_endpoint" {
   value       = module.gke_cluster.endpoint_dns
 }
 
-output "cluster_ca_certificate" {
-  description = "The base64 encoded public certificate for the cluster"
-  value       = module.gke_cluster.ca_certificate
-  sensitive   = true
-}
-
 # --- Cloud SQL Outputs ---
 
 output "instance_address" {
