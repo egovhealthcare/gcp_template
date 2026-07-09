@@ -220,6 +220,12 @@ variable "enable_legacy_ingress" {
   default     = false
 }
 
+variable "enable_jumphost" {
+  description = "Enable jumphost VM and related resources"
+  type        = bool
+  default     = true
+}
+
 variable "jwks_base64" {
   description = "Base64-encoded JWKS payload"
   type        = string
