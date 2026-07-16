@@ -407,6 +407,18 @@ variable "external_tls_key" {
   }
 }
 
+variable "metabase_etl_repo" {
+  description = "GitHub repo for metabase_etl SQL files in owner/repo format (e.g. your-org/metabase_etl). Required when provision.enabled is true."
+  type        = string
+  default     = null
+}
+
+variable "metabase_etl_branch" {
+  description = "Branch, tag, or commit SHA to clone from metabase_etl_repo. Defaults to 'main'."
+  type        = string
+  default     = "main"
+}
+
 variable "external_tls_base_domains" {
   description = "Base domains covered by the external wildcard cert (e.g. [\"example.org\"] for *.example.org). Subdomains of these are excluded from cert-manager issuance."
   type        = list(string)
