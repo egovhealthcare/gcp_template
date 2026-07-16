@@ -92,7 +92,7 @@ locals {
     ]
     provision = {
       enabled       = var.metabase_etl_repo != null
-      secretName    = kubernetes_secret.metabase_etl.metadata[0].name
+      secretName    = var.metabase_etl_repo != null ? kubernetes_secret.metabase_etl[0].metadata[0].name : ""
       sqlRepo       = var.metabase_etl_repo != null ? var.metabase_etl_repo : ""
       sqlRepoBranch = var.metabase_etl_branch
     }

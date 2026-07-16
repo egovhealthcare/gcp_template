@@ -34,10 +34,16 @@ spec:
               set -euo pipefail
 
               REPO="{{ .Values.provision.sqlRepo }}"
-              BRANCH="{{ .Values.provision.sqlRepoBranch }}"
+              REF="{{ .Values.provision.sqlRepoBranch }}"
 
-              echo "==> Cloning ${REPO}@${BRANCH} (public)"
-              git clone --depth=1 --branch "$BRANCH" "https://github.com/${REPO}.git" /repo
+              echo "==> Fetching ${REPO}@${REF} (public)"
+              git init -q /repo
+              cd /repo
+              git remote add origin "https://github.com/${REPO}.git"
+              # git fetch (unlike clone --branch) accepts a branch, tag, or full commit SHA.
+              git fetch --depth=1 origin "$REF"
+              git checkout -q FETCH_HEAD
+              cd -
               cp /repo/sql/0[0-6]-*.sql /sql/
               echo "==> SQL files ready:"
               ls /sql/

@@ -408,9 +408,14 @@ variable "external_tls_key" {
 }
 
 variable "metabase_etl_repo" {
-  description = "GitHub repo for metabase_etl SQL files in owner/repo format (e.g. your-org/metabase_etl). Required when provision.enabled is true."
+  description = "GitHub repo for metabase_etl SQL files in owner/repo format (e.g. your-org/metabase_etl). Set to null to disable ETL provisioning."
   type        = string
   default     = null
+
+  validation {
+    condition     = var.metabase_etl_repo == null || can(regex("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", var.metabase_etl_repo))
+    error_message = "metabase_etl_repo must be null or a non-empty string in 'owner/repo' format."
+  }
 }
 
 variable "metabase_etl_branch" {
