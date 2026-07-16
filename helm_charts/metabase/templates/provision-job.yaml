@@ -11,6 +11,9 @@ metadata:
     "helm.sh/hook": post-install,post-upgrade,post-rollback
     "helm.sh/hook-weight": "0"
     "helm.sh/hook-delete-policy": before-hook-creation
+    # Forces a new Job manifest (and thus a Helm upgrade + hook run) whenever
+    # the upstream SQL repo has a new commit, even if no other value changed.
+    "checksum/etl-commit": {{ .Values.provision.commitSha | quote }}
 spec:
   ttlSecondsAfterFinished: 43200
   backoffLimit: 2

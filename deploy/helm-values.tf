@@ -95,6 +95,7 @@ locals {
       secretName    = var.metabase_etl_repo != null ? kubernetes_secret.metabase_etl[0].metadata[0].name : ""
       sqlRepo       = var.metabase_etl_repo != null ? var.metabase_etl_repo : ""
       sqlRepoBranch = var.metabase_etl_branch
+      commitSha     = local.metabase_etl_commit_sha
     }
     resources = {
       limits = {

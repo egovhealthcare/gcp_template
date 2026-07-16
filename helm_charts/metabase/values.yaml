@@ -153,6 +153,7 @@ provision:
   secretName: ""
   sqlRepo: ""           # owner/repo (e.g. your-org/metabase_etl)
   sqlRepoBranch: main   # branch, tag, or commit SHA
+  commitSha: ""         # latest resolved commit SHA of sqlRepoBranch; changing this re-runs the job
   image:
     git:
       repository: alpine/git

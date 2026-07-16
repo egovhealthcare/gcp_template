@@ -51,6 +51,20 @@ resource "kubernetes_secret" "external_tls" {
   depends_on = [kubernetes_namespace.care_namespace]
 }
 
+# Resolves the latest commit SHA of metabase_etl_branch on every plan/apply so
+# that the provision Job's checksum annotation (helm_charts/metabase/templates/
+# provision-job.yaml) changes whenever the upstream SQL repo changes, forcing
+# Helm to create a new Job run even if no other chart values changed.
+data "http" "metabase_etl_latest_commit" {
+  count = var.metabase_etl_repo != null ? 1 : 0
+
+  url = "https://api.github.com/repos/${var.metabase_etl_repo}/commits/${var.metabase_etl_branch}"
+
+  request_headers = {
+    Accept = "application/vnd.github+json"
+  }
+}
+
 resource "kubernetes_secret" "metabase_etl" {
   count = var.metabase_etl_repo != null ? 1 : 0
 
