@@ -42,6 +42,8 @@ sha256_stdin() {
   fi
 }
 
+MAX_VERSIONS=10
+
 usage() {
   echo "Usage: $0 --project=PROJECT_ID --env=ENV --file=PATH [--secret=SECRET_NAME]"
   exit 1
@@ -121,5 +123,21 @@ if [[ "$LOCAL_SHA" != "$REMOTE_SHA" ]]; then
   echo "ERROR: Uploaded tfvars readback hash mismatch."
   exit 1
 fi
+
+# Prune old versions — keep only the MAX_VERSIONS most recent
+echo "Pruning old versions (keeping $MAX_VERSIONS most recent)..."
+gcloud secrets versions list "$SECRET_NAME" \
+  --project="$PROJECT_ID" \
+  --filter="state=enabled" \
+  --format="value(name)" \
+  --sort-by=~createTime \
+  | tail -n +$((MAX_VERSIONS + 1)) \
+  | while read -r version; do
+      [[ -z "$version" ]] && continue
+      echo "  Destroying version $version..."
+      gcloud secrets versions destroy "$version" \
+        --secret="$SECRET_NAME" \
+        --project="$PROJECT_ID" --quiet
+    done
 
 echo "OK: tfvars uploaded and verified for secret '$SECRET_NAME' (project: $PROJECT_ID)."
