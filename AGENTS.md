@@ -111,14 +111,15 @@ When provided, cert-manager only issues certificates for domains NOT covered by 
 
 ### Helm Config Variable Shape
 
-`var.helm_config` is a `map(map(string))` with the following expected keys:
+`var.helm_config` is an object containing non-DICOM image settings plus optional replica, resource, and rollout overrides. Resource overrides must be complete Kubernetes resource blocks; use `limits.cpu = null` to explicitly remove a CPU limit.
 
 ```hcl
 helm_config = {
-  care_backend  = { repository = "...", tag = "..." }
-  care_frontend = { repository = "...", tag = "..." }
-  metabase      = { repository = "...", tag = "..." }
-  redis         = { repository = "...", tag = "..." }
+  deployment_strategy = "Recreate"
+  care_backend  = { repository = "...", tag = "...", api_replica_count = 1 }
+  care_frontend = { repository = "...", tag = "...", replica_count = 1 }
+  metabase      = { repository = "...", tag = "...", replica_count = 1 }
+  redis         = { repository = "...", tag = "...", replica_count = 1 }
 }
 ```
 
