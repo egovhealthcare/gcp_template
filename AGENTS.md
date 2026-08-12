@@ -106,8 +106,15 @@ the flag off never destroys a provisioned key.
   `https://www.google.com/recaptcha/api/siteverify`) is read with a `data "http"` call to
   `projects.keys.retrieveLegacySecretKey`, authenticated with the access token from
   `data.google_client_config`. It only runs when `enable_recaptcha` is set, and a `postcondition`
-  surfaces the API error when the principal applying `infra/` lacks
-  `roles/recaptchaenterprise.admin`.
+  surfaces the API error on failure.
+- IAM: the principal applying `infra/` always needs reCAPTCHA key create/update permissions
+  because the key is provisioned regardless of the flag, plus
+  `recaptchaenterprise.keys.retrievelegacysecretkey` once `enable_recaptcha` is set.
+  `roles/recaptchaenterprise.admin` covers both. The GitHub WIF deployer applies `deploy/` only and
+  needs nothing extra.
+- The retrieved secret is stored in `infra/` state like every other provisioned credential, so it
+  is readable via `tofu show -json` and `TF_LOG` output even though the module output is marked
+  sensitive. Treat state and debug artifacts as secret-bearing.
 - The frontend bakes `REACT_RECAPTCHA_SITE_KEY` in at build time and cannot read the Kubernetes
   secret. Read the site key with `tofu output recaptcha_site_key` in `infra/` and set it in the FE
   build environment.
@@ -206,3 +213,4 @@ Valid GCP credentials with cluster access are required.
 - `service_account_email` must match `*.gserviceaccount.com`.
 - Changing the hardcoded `integration_type` in `infra/recaptcha.tf` replaces the key, so the site key changes and the frontend build must be updated.
 - `data.http.recaptcha_legacy_secret` only runs when `enable_recaptcha` is set. It needs `roles/recaptchaenterprise.admin` on the applying principal, and re-runs on every `infra/` plan.
+- `enable_recaptcha` is read by both `infra/` and `deploy/`. Apply `infra/` first after enabling it, otherwise the `kubernetes_secret.care_backend` precondition fails because the outputs are still null.

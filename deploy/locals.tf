@@ -32,6 +32,12 @@ locals {
   external_tls_secret_name    = "${var.org}-${var.app}-${var.environment}-external-tls"
   use_external_tls            = var.external_tls_cert != null
 
+  # Tolerate an infra state that predates the reCAPTCHA outputs so the failure
+  # surfaces as the precondition on kubernetes_secret.care_backend instead of an
+  # unsupported-attribute error.
+  recaptcha_site_key   = try(data.terraform_remote_state.infra.outputs.recaptcha_site_key, null)
+  recaptcha_secret_key = try(data.terraform_remote_state.infra.outputs.recaptcha_secret_key, null)
+
   metabase_secret_data = {
     MB_DB_TYPE               = "postgres"
     MB_DB_DBNAME             = data.terraform_remote_state.infra.outputs.metabase_database_name
@@ -90,8 +96,8 @@ locals {
     }, var.enable_scribe ? {
     SCRIBE_GOOGLE_APPLICATION_CREDENTIALS_B64 = data.terraform_remote_state.infra.outputs.scribe_sa_key_b64
     } : {}, var.enable_recaptcha ? {
-    GOOGLE_RECAPTCHA_SITE_KEY   = data.terraform_remote_state.infra.outputs.recaptcha_site_key
-    GOOGLE_RECAPTCHA_SECRET_KEY = data.terraform_remote_state.infra.outputs.recaptcha_secret_key
+    GOOGLE_RECAPTCHA_SITE_KEY   = local.recaptcha_site_key
+    GOOGLE_RECAPTCHA_SECRET_KEY = local.recaptcha_secret_key
     } : {}, var.additional_secrets, var.enable_dicom ? {
     CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret[0].result
   } : {})
