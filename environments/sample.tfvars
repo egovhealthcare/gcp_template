@@ -67,7 +67,7 @@ enable_recaptcha      = false
 
 # reCAPTCHA. The key is always provisioned by infra/; enable_recaptcha only controls
 # whether the site/secret keys are injected into the CARE backend secret.
-# Extra domains appended to web_domain_name and api_domain_name. Normally left empty.
+# recaptcha_additional_domains is appended to web_domain_name and api_domain_name.
 recaptcha_additional_domains = []
 
 # Service account used by workloads/automation where applicable.

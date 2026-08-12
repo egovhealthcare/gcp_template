@@ -431,9 +431,3 @@ variable "recaptcha_additional_domains" {
   type        = list(string)
   default     = []
 }
-
-variable "recaptcha_key_display_name" {
-  description = "Override for the reCAPTCHA key display name. Defaults to {org}-{app}-{environment}."
-  type        = string
-  default     = null
-}

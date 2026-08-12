@@ -214,3 +214,4 @@ Valid GCP credentials with cluster access are required.
 - Changing the hardcoded `integration_type` in `infra/recaptcha.tf` replaces the key, so the site key changes and the frontend build must be updated.
 - `data.http.recaptcha_legacy_secret` only runs when `enable_recaptcha` is set. It needs `roles/recaptchaenterprise.admin` on the applying principal, and re-runs on every `infra/` plan.
 - `enable_recaptcha` is read by both `infra/` and `deploy/`. Apply `infra/` first after enabling it, otherwise the `kubernetes_secret.care_backend` precondition fails because the outputs are still null.
+- Existing environments must re-apply `pre-infra/` before the next `infra/` apply. The key is provisioned unconditionally, so `infra/` fails if `recaptchaenterprise.googleapis.com` has not been enabled.

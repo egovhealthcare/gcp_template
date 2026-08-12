@@ -1,6 +1,4 @@
 locals {
-  recaptcha_key_display_name = coalesce(var.recaptcha_key_display_name, "${var.org}-${var.app}-${var.environment}")
-
   recaptcha_allowed_domains = distinct(concat(var.web_domain_name, var.api_domain_name, var.recaptcha_additional_domains))
 }
 
@@ -8,7 +6,7 @@ locals {
 # module only stops the secrets from reaching the workload.
 resource "google_recaptcha_enterprise_key" "care" {
   project      = var.project_id
-  display_name = local.recaptcha_key_display_name
+  display_name = "${var.org}-${var.app}-${var.environment}"
   labels       = local.common_labels
 
   web_settings {
