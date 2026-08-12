@@ -12,7 +12,9 @@ resource "google_recaptcha_enterprise_key" "care" {
   labels       = local.common_labels
 
   web_settings {
-    integration_type  = var.recaptcha_integration_type
+    # CARE FE renders a v2 checkbox widget (react-google-recaptcha, g-recaptcha-response),
+    # so the key must be CHECKBOX. Switch to SCORE here when the frontend moves to v3.
+    integration_type  = "CHECKBOX"
     allow_all_domains = length(local.recaptcha_allowed_domains) == 0
     allowed_domains   = local.recaptcha_allowed_domains
   }

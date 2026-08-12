@@ -426,17 +426,6 @@ variable "enable_recaptcha" {
   default     = false
 }
 
-variable "recaptcha_integration_type" {
-  description = "reCAPTCHA integration type. CHECKBOX and INVISIBLE are v2-style widgets, SCORE is the v3 equivalent. Changing this replaces the key and issues a new site key."
-  type        = string
-  default     = "CHECKBOX"
-
-  validation {
-    condition     = contains(["CHECKBOX", "INVISIBLE", "SCORE"], var.recaptcha_integration_type)
-    error_message = "recaptcha_integration_type must be one of CHECKBOX, INVISIBLE or SCORE."
-  }
-}
-
 variable "recaptcha_additional_domains" {
   description = "Extra domains allowed to use the reCAPTCHA key, appended to web_domain_name and api_domain_name. Normally left empty."
   type        = list(string)

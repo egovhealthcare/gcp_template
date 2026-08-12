@@ -94,10 +94,10 @@ Boolean variables control optional infrastructure with `count` or `for_each`:
 `GOOGLE_RECAPTCHA_SECRET_KEY` are merged into `local.secret_data` in `deploy/locals.tf`, so turning
 the flag off never destroys a provisioned key.
 
-- `var.recaptcha_integration_type` — `CHECKBOX` (default), `INVISIBLE` or `SCORE`. `CHECKBOX` and
-  `INVISIBLE` are v2-style widgets; `SCORE` is the v3 equivalent. CARE FE renders a v2 checkbox
-  (`react-google-recaptcha`, `g-recaptcha-response`), so `CHECKBOX` is the working default.
-  Changing this value **replaces the key and issues a new site key**.
+- The key's `integration_type` is hardcoded to `CHECKBOX` in `infra/recaptcha.tf`. CARE FE renders
+  a v2 checkbox (`react-google-recaptcha`, `g-recaptcha-response`), so that is the only value that
+  works today. When the frontend moves to v3, change it to `SCORE` there — note this **replaces
+  the key and issues a new site key**.
 - Allowed domains are `web_domain_name` + `api_domain_name` + `var.recaptcha_additional_domains`.
   All subdomains of a listed domain are allowed automatically. With no domains at all the key falls
   back to `allow_all_domains`, so a precondition blocks `enable_recaptcha` unless at least one
@@ -204,5 +204,5 @@ Valid GCP credentials with cluster access are required.
 - `external_tls_cert` and `external_tls_key` must both be set or both null.
 - `enable_dicom` requires `dicom_domain_name` to be non-empty.
 - `service_account_email` must match `*.gserviceaccount.com`.
-- Changing `recaptcha_integration_type` replaces the key, so the site key changes and the frontend build must be updated.
+- Changing the hardcoded `integration_type` in `infra/recaptcha.tf` replaces the key, so the site key changes and the frontend build must be updated.
 - `data.external.recaptcha_legacy_secret` only runs when `enable_recaptcha` is set. It needs `curl`, `jq` and `roles/recaptchaenterprise.admin` on the applying principal, and re-runs on every `infra/` plan.
