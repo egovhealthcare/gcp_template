@@ -162,7 +162,7 @@ output "recaptcha_site_key" {
 }
 
 output "recaptcha_secret_key" {
-  description = "Legacy reCAPTCHA secret key used with https://www.google.com/recaptcha/api/siteverify"
-  value       = data.external.recaptcha_legacy_secret.result["legacySecretKey"]
+  description = "Legacy reCAPTCHA secret key used with https://www.google.com/recaptcha/api/siteverify. Null unless enable_recaptcha is set."
+  value       = var.enable_recaptcha ? data.external.recaptcha_legacy_secret[0].result["legacySecretKey"] : null
   sensitive   = true
 }

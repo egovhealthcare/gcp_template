@@ -89,8 +89,8 @@ Boolean variables control optional infrastructure with `count` or `for_each`:
 
 ### reCAPTCHA
 
-`infra/recaptcha.tf` provisions a `google_recaptcha_enterprise_key` (`prevent_destroy = true`) for
-every environment. `var.enable_recaptcha` only controls whether `GOOGLE_RECAPTCHA_SITE_KEY` and
+`infra/recaptcha.tf` provisions a `google_recaptcha_enterprise_key` for every environment.
+`var.enable_recaptcha` only controls whether `GOOGLE_RECAPTCHA_SITE_KEY` and
 `GOOGLE_RECAPTCHA_SECRET_KEY` are merged into `local.secret_data` in `deploy/locals.tf`, so turning
 the flag off never destroys a provisioned key.
 
@@ -99,12 +99,15 @@ the flag off never destroys a provisioned key.
   (`react-google-recaptcha`, `g-recaptcha-response`), so `CHECKBOX` is the working default.
   Changing this value **replaces the key and issues a new site key**.
 - Allowed domains are `web_domain_name` + `api_domain_name` + `var.recaptcha_additional_domains`.
-  All subdomains of a listed domain are allowed automatically.
+  All subdomains of a listed domain are allowed automatically. With no domains at all the key falls
+  back to `allow_all_domains`, so a precondition blocks `enable_recaptcha` unless at least one
+  domain is configured.
 - The provider does not export a secret key. The legacy secret (used by CARE's backend against
   `https://www.google.com/recaptcha/api/siteverify`) is fetched by
   `infra/scripts/fetch-recaptcha-legacy-secret.sh` through a `data "external"` call to
-  `projects.keys.retrieveLegacySecretKey`. The principal applying `infra/` needs
-  `recaptchaenterprise.keys.retrievelegacysecretkey`, and the runner needs `curl` and `jq`.
+  `projects.keys.retrieveLegacySecretKey`, which only runs when `enable_recaptcha` is set. The
+  principal applying `infra/` needs `roles/recaptchaenterprise.admin` (key management plus
+  `recaptchaenterprise.keys.retrievelegacysecretkey`), and the runner needs `curl` and `jq`.
 - The frontend bakes `REACT_RECAPTCHA_SITE_KEY` in at build time and cannot read the Kubernetes
   secret. Read the site key with `tofu output recaptcha_site_key` in `infra/` and set it in the FE
   build environment.
@@ -201,6 +204,5 @@ Valid GCP credentials with cluster access are required.
 - `external_tls_cert` and `external_tls_key` must both be set or both null.
 - `enable_dicom` requires `dicom_domain_name` to be non-empty.
 - `service_account_email` must match `*.gserviceaccount.com`.
-- The reCAPTCHA key carries `prevent_destroy = true`. Removing it requires an explicit lifecycle edit; `enable_recaptcha = false` only stops secret injection.
 - Changing `recaptcha_integration_type` replaces the key, so the site key changes and the frontend build must be updated.
-- `data.external.recaptcha_legacy_secret` re-runs on every plan in `infra/` and needs `curl`, `jq` and the `recaptchaenterprise.keys.retrievelegacysecretkey` permission on the applying principal.
+- `data.external.recaptcha_legacy_secret` only runs when `enable_recaptcha` is set. It needs `curl`, `jq` and `roles/recaptchaenterprise.admin` on the applying principal, and re-runs on every `infra/` plan.

@@ -29,12 +29,18 @@ if [[ -z "$access_token" || "$access_token" == "null" ]]; then
   exit 1
 fi
 
-if ! response="$(curl -sS --fail-with-body \
-  -H "Authorization: Bearer ${access_token}" \
-  "https://recaptchaenterprise.googleapis.com/v1/${key_name}:retrieveLegacySecretKey")"; then
-  echo "fetch-recaptcha-legacy-secret.sh: request failed for ${key_name}: ${response:-no response}" >&2
-  exit 1
-fi
+for attempt in 1 2 3; do
+  if response="$(curl -sS --fail-with-body \
+    -H "Authorization: Bearer ${access_token}" \
+    "https://recaptchaenterprise.googleapis.com/v1/${key_name}:retrieveLegacySecretKey")"; then
+    break
+  fi
+  if [[ "$attempt" == 3 ]]; then
+    echo "fetch-recaptcha-legacy-secret.sh: request failed for ${key_name}: ${response:-no response}" >&2
+    exit 1
+  fi
+  sleep "$attempt"
+done
 
 if ! jq -e 'has("legacySecretKey")' >/dev/null 2>&1 <<<"$response"; then
   echo "fetch-recaptcha-legacy-secret.sh: unexpected response for ${key_name}: ${response}" >&2

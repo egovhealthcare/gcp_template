@@ -15,12 +15,13 @@ resource "google_recaptcha_enterprise_key" "care" {
     integration_type  = var.recaptcha_integration_type
     allow_all_domains = length(local.recaptcha_allowed_domains) == 0
     allowed_domains   = local.recaptcha_allowed_domains
-    # Only valid for the CHECKBOX and INVISIBLE integration types.
-    challenge_security_preference = var.recaptcha_integration_type == "SCORE" ? null : "BALANCED"
   }
 
   lifecycle {
-    prevent_destroy = true
+    precondition {
+      condition     = !var.enable_recaptcha || length(local.recaptcha_allowed_domains) > 0
+      error_message = "enable_recaptcha requires at least one domain in web_domain_name, api_domain_name or recaptcha_additional_domains, otherwise the key would accept requests from any domain."
+    }
   }
 }
 
@@ -29,7 +30,11 @@ data "google_client_config" "default" {}
 # The provider exposes no legacy secret key, so it is fetched from the
 # projects.keys.retrieveLegacySecretKey REST method. That secret is what
 # CARE's backend uses against https://www.google.com/recaptcha/api/siteverify.
+# Only fetched when the secrets are actually consumed, so environments with
+# reCAPTCHA disabled do not need the extra permission on every plan.
 data "external" "recaptcha_legacy_secret" {
+  count = var.enable_recaptcha ? 1 : 0
+
   program = ["bash", "${path.module}/scripts/fetch-recaptcha-legacy-secret.sh"]
 
   query = {
