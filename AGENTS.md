@@ -48,7 +48,7 @@ Set the following before running any target:
 | `KMS/` | `keys` |
 | `deploy/` | `deploy-backend` |
 
-> The `deploy/` module runs `tofu plan` with `-lock=false`. All other modules use normal locking.
+> The `infra/` and `deploy/` modules run `tofu plan` with `-lock=false`. `pre-infra/` and `KMS/` use normal locking.
 
 ## Configuration
 
