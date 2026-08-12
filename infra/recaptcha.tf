@@ -47,6 +47,8 @@ data "http" "recaptcha_legacy_secret" {
     attempts = 2
   }
 
+  request_timeout_ms = 10000
+
   lifecycle {
     postcondition {
       condition     = self.status_code == 200
