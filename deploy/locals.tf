@@ -89,6 +89,9 @@ locals {
     FACILITY_S3_BUCKET_ENDPOINT = "https://storage.googleapis.com"
     }, var.enable_scribe ? {
     SCRIBE_GOOGLE_APPLICATION_CREDENTIALS_B64 = data.terraform_remote_state.infra.outputs.scribe_sa_key_b64
+    } : {}, var.enable_recaptcha ? {
+    GOOGLE_RECAPTCHA_SITE_KEY   = data.terraform_remote_state.infra.outputs.recaptcha_site_key
+    GOOGLE_RECAPTCHA_SECRET_KEY = data.terraform_remote_state.infra.outputs.recaptcha_secret_key
     } : {}, var.additional_secrets, var.enable_dicom ? {
     CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret[0].result
   } : {})

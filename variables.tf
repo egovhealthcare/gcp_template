@@ -417,3 +417,34 @@ variable "external_tls_base_domains" {
     error_message = "external_tls_base_domains must be non-empty when external_tls_cert is provided."
   }
 }
+
+# --- reCAPTCHA ---
+
+variable "enable_recaptcha" {
+  description = "Inject reCAPTCHA site/secret keys into the CARE backend secret. The key itself is always provisioned by the infra module, so toggling this off never destroys it."
+  type        = bool
+  default     = false
+}
+
+variable "recaptcha_integration_type" {
+  description = "reCAPTCHA integration type. CHECKBOX and INVISIBLE are v2-style widgets, SCORE is the v3 equivalent. Changing this replaces the key and issues a new site key."
+  type        = string
+  default     = "CHECKBOX"
+
+  validation {
+    condition     = contains(["CHECKBOX", "INVISIBLE", "SCORE"], var.recaptcha_integration_type)
+    error_message = "recaptcha_integration_type must be one of CHECKBOX, INVISIBLE or SCORE."
+  }
+}
+
+variable "recaptcha_additional_domains" {
+  description = "Extra domains allowed to use the reCAPTCHA key, appended to web_domain_name and api_domain_name. Normally left empty."
+  type        = list(string)
+  default     = []
+}
+
+variable "recaptcha_key_display_name" {
+  description = "Override for the reCAPTCHA key display name. Defaults to {org}-{app}-{environment}."
+  type        = string
+  default     = null
+}

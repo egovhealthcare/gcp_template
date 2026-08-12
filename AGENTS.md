@@ -85,10 +85,35 @@ Boolean variables control optional infrastructure with `count` or `for_each`:
 | `enable_github_wif` | GitHub Actions Workload Identity Federation |
 | `enable_legacy_ingress` | Legacy GCE Ingress resources |
 | `enable_dns_zone` | Cloud DNS managed zone |
+| `enable_recaptcha` | Injection of reCAPTCHA keys into the CARE backend secret (the key itself is always provisioned) |
+
+### reCAPTCHA
+
+`infra/recaptcha.tf` provisions a `google_recaptcha_enterprise_key` (`prevent_destroy = true`) for
+every environment. `var.enable_recaptcha` only controls whether `GOOGLE_RECAPTCHA_SITE_KEY` and
+`GOOGLE_RECAPTCHA_SECRET_KEY` are merged into `local.secret_data` in `deploy/locals.tf`, so turning
+the flag off never destroys a provisioned key.
+
+- `var.recaptcha_integration_type` — `CHECKBOX` (default), `INVISIBLE` or `SCORE`. `CHECKBOX` and
+  `INVISIBLE` are v2-style widgets; `SCORE` is the v3 equivalent. CARE FE renders a v2 checkbox
+  (`react-google-recaptcha`, `g-recaptcha-response`), so `CHECKBOX` is the working default.
+  Changing this value **replaces the key and issues a new site key**.
+- Allowed domains are `web_domain_name` + `api_domain_name` + `var.recaptcha_additional_domains`.
+  All subdomains of a listed domain are allowed automatically.
+- The provider does not export a secret key. The legacy secret (used by CARE's backend against
+  `https://www.google.com/recaptcha/api/siteverify`) is fetched by
+  `infra/scripts/fetch-recaptcha-legacy-secret.sh` through a `data "external"` call to
+  `projects.keys.retrieveLegacySecretKey`. The principal applying `infra/` needs
+  `recaptchaenterprise.keys.retrievelegacysecretkey`, and the runner needs `curl` and `jq`.
+- The frontend bakes `REACT_RECAPTCHA_SITE_KEY` in at build time and cannot read the Kubernetes
+  secret. Read the site key with `tofu output recaptcha_site_key` in `infra/` and set it in the FE
+  build environment.
 
 ### Provider Versions
 
 All modules pin: `google`/`google-beta` `~> 6.33`, `random ~> 3.7`, OpenTofu `~> 1.11`.
+
+The `infra/` module additionally requires `external ~> 2.3` (reCAPTCHA legacy secret retrieval).
 
 The `deploy/` module additionally requires: `kubernetes ~> 2.0`, `helm ~> 2.0`, `tls ~> 4.0`, `local ~> 2.0`.
 
@@ -144,13 +169,13 @@ Charts are located under `helm_charts/`. Refer to [.github/instructions/helm.ins
 ## Secrets Flow
 
 ```
-infra/ (DB passwords, HMAC keys) ──┐
-                                    ├──→ deploy/locals.tf (secret maps) ──→ kubernetes_secret ──→ Pods
-KMS/ (Django secrets, Metabase key) ┘
+infra/ (DB passwords, HMAC keys, reCAPTCHA keys) ──┐
+                                                    ├──→ deploy/locals.tf (secret maps) ──→ kubernetes_secret ──→ Pods
+KMS/ (Django secrets, Metabase key) ────────────────┘
 ```
 
 Three secret maps in `deploy/locals.tf`:
-- `secret_data` — CARE backend (DB creds, GCS keys, Redis URL, Django secrets, JWKS) + `var.additional_secrets`
+- `secret_data` — CARE backend (DB creds, GCS keys, Redis URL, Django secrets, JWKS) + `var.additional_secrets` + reCAPTCHA keys when `enable_recaptcha`
 - `metabase_secret_data` — Metabase DB connection + encryption key
 - `dicom_secret_data` — DICOM DB + LDAP + GCS (conditional on `enable_dicom`)
 
@@ -176,3 +201,6 @@ Valid GCP credentials with cluster access are required.
 - `external_tls_cert` and `external_tls_key` must both be set or both null.
 - `enable_dicom` requires `dicom_domain_name` to be non-empty.
 - `service_account_email` must match `*.gserviceaccount.com`.
+- The reCAPTCHA key carries `prevent_destroy = true`. Removing it requires an explicit lifecycle edit; `enable_recaptcha = false` only stops secret injection.
+- Changing `recaptcha_integration_type` replaces the key, so the site key changes and the frontend build must be updated.
+- `data.external.recaptcha_legacy_secret` re-runs on every plan in `infra/` and needs `curl`, `jq` and the `recaptchaenterprise.keys.retrievelegacysecretkey` permission on the applying principal.
