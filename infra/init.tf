@@ -16,9 +16,9 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.7"
     }
-    external = {
-      source  = "hashicorp/external"
-      version = "~> 2.3"
+    http = {
+      source  = "hashicorp/http"
+      version = "~> 3.4"
     }
   }
 }

@@ -34,13 +34,23 @@ data "google_client_config" "default" {}
 # CARE's backend uses against https://www.google.com/recaptcha/api/siteverify.
 # Only fetched when the secrets are actually consumed, so environments with
 # reCAPTCHA disabled do not need the extra permission on every plan.
-data "external" "recaptcha_legacy_secret" {
+data "http" "recaptcha_legacy_secret" {
   count = var.enable_recaptcha ? 1 : 0
 
-  program = ["bash", "${path.module}/scripts/fetch-recaptcha-legacy-secret.sh"]
+  url = "https://recaptchaenterprise.googleapis.com/v1/projects/${var.project_id}/keys/${google_recaptcha_enterprise_key.care.name}:retrieveLegacySecretKey"
 
-  query = {
-    key_name     = "projects/${var.project_id}/keys/${google_recaptcha_enterprise_key.care.name}"
-    access_token = data.google_client_config.default.access_token
+  request_headers = {
+    Authorization = join(" ", ["Bearer", data.google_client_config.default.access_token])
+  }
+
+  retry {
+    attempts = 2
+  }
+
+  lifecycle {
+    postcondition {
+      condition     = self.status_code == 200
+      error_message = "retrieveLegacySecretKey returned HTTP ${self.status_code}. The principal applying this module needs recaptchaenterprise.keys.retrievelegacysecretkey. Response: ${self.response_body}"
+    }
   }
 }

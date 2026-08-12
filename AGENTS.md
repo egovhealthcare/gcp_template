@@ -103,11 +103,11 @@ the flag off never destroys a provisioned key.
   back to `allow_all_domains`, so a precondition blocks `enable_recaptcha` unless at least one
   domain is configured.
 - The provider does not export a secret key. The legacy secret (used by CARE's backend against
-  `https://www.google.com/recaptcha/api/siteverify`) is fetched by
-  `infra/scripts/fetch-recaptcha-legacy-secret.sh` through a `data "external"` call to
-  `projects.keys.retrieveLegacySecretKey`, which only runs when `enable_recaptcha` is set. The
-  principal applying `infra/` needs `roles/recaptchaenterprise.admin` (key management plus
-  `recaptchaenterprise.keys.retrievelegacysecretkey`), and the runner needs `curl` and `jq`.
+  `https://www.google.com/recaptcha/api/siteverify`) is read with a `data "http"` call to
+  `projects.keys.retrieveLegacySecretKey`, authenticated with the access token from
+  `data.google_client_config`. It only runs when `enable_recaptcha` is set, and a `postcondition`
+  surfaces the API error when the principal applying `infra/` lacks
+  `roles/recaptchaenterprise.admin`.
 - The frontend bakes `REACT_RECAPTCHA_SITE_KEY` in at build time and cannot read the Kubernetes
   secret. Read the site key with `tofu output recaptcha_site_key` in `infra/` and set it in the FE
   build environment.
@@ -116,7 +116,7 @@ the flag off never destroys a provisioned key.
 
 All modules pin: `google`/`google-beta` `~> 6.33`, `random ~> 3.7`, OpenTofu `~> 1.11`.
 
-The `infra/` module additionally requires `external ~> 2.3` (reCAPTCHA legacy secret retrieval).
+The `infra/` module additionally requires `http ~> 3.4` (reCAPTCHA legacy secret retrieval).
 
 The `deploy/` module additionally requires: `kubernetes ~> 2.0`, `helm ~> 2.0`, `tls ~> 4.0`, `local ~> 2.0`.
 
@@ -205,4 +205,4 @@ Valid GCP credentials with cluster access are required.
 - `enable_dicom` requires `dicom_domain_name` to be non-empty.
 - `service_account_email` must match `*.gserviceaccount.com`.
 - Changing the hardcoded `integration_type` in `infra/recaptcha.tf` replaces the key, so the site key changes and the frontend build must be updated.
-- `data.external.recaptcha_legacy_secret` only runs when `enable_recaptcha` is set. It needs `curl`, `jq` and `roles/recaptchaenterprise.admin` on the applying principal, and re-runs on every `infra/` plan.
+- `data.http.recaptcha_legacy_secret` only runs when `enable_recaptcha` is set. It needs `roles/recaptchaenterprise.admin` on the applying principal, and re-runs on every `infra/` plan.
