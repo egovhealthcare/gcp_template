@@ -33,7 +33,7 @@ api:
   livenessProbe:
     enabled: true
     httpGet:
-      path: /health/
+      path: /ping/
       port: http
     initialDelaySeconds: 70
     periodSeconds: 10
@@ -248,7 +248,7 @@ backendPolicy:
     healthyThreshold: 1
     unhealthyThreshold: 3
     port: 9000
-    path: /health/
+    path: /ping/
 
 httpRoute:
   enabled: "{{ .Values.global.httpRoute.enabled }}"
