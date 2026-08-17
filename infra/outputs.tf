@@ -122,6 +122,11 @@ output "gateway_ip_name" {
   value       = google_compute_address.gateway_ip.name
 }
 
+output "nat_ip_address" {
+  description = "Static public IP used for all GKE outbound traffic (for external whitelisting)"
+  value       = google_compute_address.nat_ip.address
+}
+
 # --- Cloud Armor Outputs ---
 
 output "security_policy_name" {
