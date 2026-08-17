@@ -8,6 +8,8 @@ metadata:
     {{- include "metabase.labels" . | nindent 4 }}
 spec:
   default:
+    logging:
+      enabled: true
     timeoutSec: {{ .Values.backendPolicy.timeoutSec }}
     connectionDraining:
       drainingTimeoutSec: {{ .Values.backendPolicy.drainingTimeoutSec }}
