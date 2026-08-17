@@ -10,6 +10,7 @@ spec:
   default:
     logging:
       enabled: {{ tpl (.Values.backendPolicy.logging.enabled | toString) . }}
+      sampleRate: {{ tpl (.Values.backendPolicy.logging.sampleRate | toString) . }}
     timeoutSec: {{ .Values.backendPolicy.timeoutSec }}
     connectionDraining:
       drainingTimeoutSec: {{ .Values.backendPolicy.drainingTimeoutSec }}
