@@ -239,7 +239,11 @@ variable "helm_config" {
       repository                  = string
       tag                         = string
       api_replica_count           = optional(number, 2)
-      celery_worker_replica_count = optional(number, 1)
+      celery_worker_replica_count                    = optional(number, 1)
+      celery_worker_autoscaling_enabled              = optional(bool, false)
+      celery_worker_autoscaling_min_replicas         = optional(number, 2)
+      celery_worker_autoscaling_max_replicas         = optional(number, 6)
+      celery_worker_autoscaling_target_cpu           = optional(number, 80)
     })
     care_frontend = object({
       repository = string

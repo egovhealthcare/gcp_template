@@ -65,6 +65,11 @@ celeryWorker:
   command:
     - /app/celery_worker.sh
   podAnnotations: {}
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 80
   resources:
     limits:
       cpu: 500m

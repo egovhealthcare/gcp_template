@@ -7,7 +7,9 @@ metadata:
     {{- include "care-be.labels" . | nindent 4 }}
     app.kubernetes.io/component: celery-worker
 spec:
+  {{- if not .Values.celeryWorker.autoscaling.enabled }}
   replicas: {{ .Values.celeryWorker.replicaCount | default 1 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "care-be.selectorLabels" . | nindent 6 }}
