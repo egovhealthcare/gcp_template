@@ -62,6 +62,7 @@ api:
 celeryWorker:
   enabled: true
   replicaCount: 1
+  terminationGracePeriodSeconds: 300
   command:
     - /app/celery_worker.sh
   podAnnotations: {}
