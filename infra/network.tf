@@ -93,7 +93,6 @@ resource "google_compute_global_address" "services_range" {
   network       = module.vpc.network_self_link
 }
 
-# Cloud Router (free) — required by Cloud NAT
 resource "google_compute_router" "nat_router" {
   name    = "nat-router-${var.app}-${var.environment}"
   region  = var.region
@@ -101,9 +100,8 @@ resource "google_compute_router" "nat_router" {
   network = module.vpc.network_id
 }
 
-# Cloud NAT — routes all GKE outbound traffic through the static NAT IP
-resource "google_compute_router_nat" "gke_nat" {
-  name                               = "gke-nat-${var.app}-${var.environment}"
+resource "google_compute_router_nat" "cloud_nat" {
+  name                               = "cloud-nat-${var.app}-${var.environment}"
   router                             = google_compute_router.nat_router.name
   region                             = var.region
   project                            = var.project_id
