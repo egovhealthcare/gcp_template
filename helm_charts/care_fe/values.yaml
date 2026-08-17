@@ -93,6 +93,8 @@ backendPolicy:
   enabled: "{{ .Values.global.backendPolicy.enabled }}"
   # Name of the Cloud Armor regional security policy (must exist)
   securityPolicy: "{{ .Values.global.backendPolicy.securityPolicy }}"
+  logging:
+    enabled: true
   timeoutSec: 60
   drainingTimeoutSec: 60
   healthCheck:

@@ -135,6 +135,8 @@ migration:
 backendPolicy:
   enabled: "{{ .Values.global.backendPolicy.enabled }}"
   securityPolicy: "{{ .Values.global.backendPolicy.securityPolicy }}"
+  logging:
+    enabled: true
   timeoutSec: 60
   drainingTimeoutSec: 60
   healthCheck:

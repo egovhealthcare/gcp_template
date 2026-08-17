@@ -9,7 +9,7 @@ metadata:
 spec:
   default:
     logging:
-      enabled: true
+      enabled: {{ .Values.backendPolicy.logging.enabled }}
     timeoutSec: {{ .Values.backendPolicy.timeoutSec }}
     connectionDraining:
       drainingTimeoutSec: {{ .Values.backendPolicy.drainingTimeoutSec }}
