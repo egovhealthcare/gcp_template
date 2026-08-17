@@ -22,4 +22,7 @@ spec:
           type: Utilization
           averageUtilization: {{ .Values.celeryWorker.autoscaling.targetCPUUtilizationPercentage }}
     {{- end }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 900
 {{- end }}
