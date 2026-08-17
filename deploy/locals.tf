@@ -105,6 +105,9 @@ locals {
       backendPolicy = {
         enabled        = true
         securityPolicy = data.terraform_remote_state.infra.outputs.security_policy_name
+        logging = {
+          enabled = true
+        }
       }
       httpRoute = {
         enabled = true

@@ -5,6 +5,8 @@ global:
   backendPolicy:
     enabled: false
     securityPolicy: ""
+    logging:
+      enabled: true
   httpRoute:
     enabled: false
   gateway:
@@ -94,7 +96,7 @@ backendPolicy:
   # Name of the Cloud Armor regional security policy (must exist)
   securityPolicy: "{{ .Values.global.backendPolicy.securityPolicy }}"
   logging:
-    enabled: true
+    enabled: "{{ .Values.global.backendPolicy.logging.enabled }}"
   timeoutSec: 60
   drainingTimeoutSec: 60
   healthCheck:

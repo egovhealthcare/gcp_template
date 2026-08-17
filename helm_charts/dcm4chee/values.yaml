@@ -10,6 +10,8 @@ global:
   backendPolicy:
     enabled: false
     securityPolicy: ""
+    logging:
+      enabled: true
   httpRoute:
     enabled: false
 
@@ -136,7 +138,7 @@ backendPolicy:
   enabled: "{{ .Values.global.backendPolicy.enabled }}"
   securityPolicy: "{{ .Values.global.backendPolicy.securityPolicy }}"
   logging:
-    enabled: true
+    enabled: "{{ .Values.global.backendPolicy.logging.enabled }}"
   timeoutSec: 60
   drainingTimeoutSec: 60
   healthCheck:
