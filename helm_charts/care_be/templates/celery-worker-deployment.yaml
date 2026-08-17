@@ -29,7 +29,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "care-be.serviceAccountName" . }}
-      terminationGracePeriodSeconds: {{ .Values.celeryWorker.terminationGracePeriodSeconds | default 300 }}
+      terminationGracePeriodSeconds: {{ .Values.celeryWorker.terminationGracePeriodSeconds | default 60 }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
