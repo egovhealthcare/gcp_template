@@ -26,10 +26,10 @@ api:
   resources:
     limits:
       cpu: 1000m
-      memory: 3Gi
+      memory: 2Gi
     requests:
       cpu: 500m
-      memory: 2Gi
+      memory: 1Gi
   # Health check configuration
   livenessProbe:
     enabled: true
@@ -74,11 +74,11 @@ celeryWorker:
     targetCPUUtilizationPercentage: 80
   resources:
     limits:
-      cpu: 500m
-      memory: 3Gi
+      cpu: 1500m
+      memory: 2Gi
     requests:
-      cpu: 250m
-      memory: 1Gi
+      cpu: 500m
+      memory: 512Mi
 
 # Celery Beat configuration
 celeryBeat:
