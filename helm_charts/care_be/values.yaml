@@ -15,6 +15,7 @@ replicaCount: 2
 api:
   enabled: true
   replicaCount: 2
+  terminationGracePeriodSeconds: 60
   command:
     - /app/start.sh
   service:
