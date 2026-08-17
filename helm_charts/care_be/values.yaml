@@ -51,7 +51,7 @@ api:
   autoscaling:
     enabled: false
     minReplicas: 2
-    maxReplicas: 10
+    maxReplicas: 6
     targetCPUUtilizationPercentage: 80
   podAnnotations: {}
   tolerations: []
