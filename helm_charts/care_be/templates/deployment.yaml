@@ -7,7 +7,9 @@ metadata:
     {{- include "care-be.labels" . | nindent 4 }}
     app.kubernetes.io/component: api
 spec:
+  {{- if not .Values.api.autoscaling.enabled }}
   replicas: {{ .Values.api.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "care-be.selectorLabels" . | nindent 6 }}
