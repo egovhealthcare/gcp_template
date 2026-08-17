@@ -93,6 +93,35 @@ resource "google_compute_global_address" "services_range" {
   network       = module.vpc.network_self_link
 }
 
+# Cloud Router (free) — required by Cloud NAT
+resource "google_compute_router" "nat_router" {
+  name    = "nat-router-${var.app}-${var.environment}"
+  region  = var.region
+  project = var.project_id
+  network = module.vpc.network_id
+}
+
+# Cloud NAT — routes all GKE outbound traffic through the static NAT IP
+resource "google_compute_router_nat" "gke_nat" {
+  name                               = "gke-nat-${var.app}-${var.environment}"
+  router                             = google_compute_router.nat_router.name
+  region                             = var.region
+  project                            = var.project_id
+  nat_ip_allocate_option             = "MANUAL_ONLY"
+  nat_ips                            = [google_compute_address.nat_ip.self_link]
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+
+  subnetwork {
+    name                    = module.vpc.subnets["${var.region}/${local.gke_subnet_name}"].id
+    source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
+  }
+
+  log_config {
+    enable = true
+    filter = "ERRORS_ONLY"
+  }
+}
+
 module "vpc_flow_logs_bucket" {
   source  = "terraform-google-modules/cloud-storage/google"
   version = "~> 10.0"
