@@ -88,7 +88,7 @@ helm_config = {
   }
   metabase = {
     repository = "metabase/metabase"
-    tag        = "v0.57.x"
+    tag        = "v0.63.13"
   }
   redis = {
     repository = "redis"
