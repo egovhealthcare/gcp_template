@@ -247,7 +247,7 @@ variable "helm_config" {
     })
     metabase = optional(object({
       repository = optional(string, "metabase/metabase")
-      tag        = optional(string, "v0.61.x")
+      tag        = optional(string, "v0.63.13")
     }), {})
     redis = optional(object({
       repository = optional(string, "redis")
