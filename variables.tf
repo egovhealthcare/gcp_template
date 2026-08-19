@@ -238,8 +238,16 @@ variable "helm_config" {
     care_backend = object({
       repository                  = string
       tag                         = string
-      api_replica_count           = optional(number, 2)
-      celery_worker_replica_count = optional(number, 1)
+      api_replica_count                       = optional(number, 2)
+      api_autoscaling_enabled                 = optional(bool, false)
+      api_autoscaling_min_replicas            = optional(number, 2)
+      api_autoscaling_max_replicas            = optional(number, 6)
+      api_autoscaling_target_cpu              = optional(number, 80)
+      celery_worker_replica_count             = optional(number, 1)
+      celery_worker_autoscaling_enabled       = optional(bool, false)
+      celery_worker_autoscaling_min_replicas  = optional(number, 2)
+      celery_worker_autoscaling_max_replicas  = optional(number, 6)
+      celery_worker_autoscaling_target_cpu    = optional(number, 80)
     })
     care_frontend = object({
       repository = string
@@ -254,6 +262,36 @@ variable "helm_config" {
       tag        = optional(string, "8-alpine")
     }), {})
   })
+
+  validation {
+    condition     = var.helm_config.care_backend.api_autoscaling_min_replicas >= 1
+    error_message = "api_autoscaling_min_replicas must be >= 1."
+  }
+
+  validation {
+    condition     = var.helm_config.care_backend.api_autoscaling_min_replicas <= var.helm_config.care_backend.api_autoscaling_max_replicas
+    error_message = "api_autoscaling_min_replicas must be <= api_autoscaling_max_replicas."
+  }
+
+  validation {
+    condition     = var.helm_config.care_backend.api_autoscaling_target_cpu >= 1 && var.helm_config.care_backend.api_autoscaling_target_cpu <= 100
+    error_message = "api_autoscaling_target_cpu must be between 1 and 100."
+  }
+
+  validation {
+    condition     = var.helm_config.care_backend.celery_worker_autoscaling_min_replicas >= 1
+    error_message = "celery_worker_autoscaling_min_replicas must be >= 1."
+  }
+
+  validation {
+    condition     = var.helm_config.care_backend.celery_worker_autoscaling_min_replicas <= var.helm_config.care_backend.celery_worker_autoscaling_max_replicas
+    error_message = "celery_worker_autoscaling_min_replicas must be <= celery_worker_autoscaling_max_replicas."
+  }
+
+  validation {
+    condition     = var.helm_config.care_backend.celery_worker_autoscaling_target_cpu >= 1 && var.helm_config.care_backend.celery_worker_autoscaling_target_cpu <= 100
+    error_message = "celery_worker_autoscaling_target_cpu must be between 1 and 100."
+  }
 }
 
 variable "additional_secrets" {
