@@ -10,9 +10,6 @@ global:
   backendPolicy:
     enabled: false
     securityPolicy: ""
-    logging:
-      enabled: true
-      sampleRate: 1000000
   httpRoute:
     enabled: false
 
@@ -138,9 +135,6 @@ migration:
 backendPolicy:
   enabled: "{{ .Values.global.backendPolicy.enabled }}"
   securityPolicy: "{{ .Values.global.backendPolicy.securityPolicy }}"
-  logging:
-    enabled: "{{ .Values.global.backendPolicy.logging.enabled }}"
-    sampleRate: "{{ .Values.global.backendPolicy.logging.sampleRate }}"
   timeoutSec: 60
   drainingTimeoutSec: 60
   healthCheck:

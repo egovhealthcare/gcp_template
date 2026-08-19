@@ -335,6 +335,18 @@ variable "legacy_fe_ip_name" {
   default     = null
 }
 
+variable "backend_logging_sample_rate" {
+  description = "Sample rate for GCP backend request logging (0.0 to 1.0)"
+  type        = number
+  default     = 1.0
+}
+
+variable "enable_log_export" {
+  description = "Enable backend request logging wiring for export-compatible environments"
+  type        = bool
+  default     = true
+}
+
 variable "flow_logs_bucket" {
   description = "Override for VPC flow logs bucket name"
   type        = string

@@ -132,6 +132,8 @@ The source of truth for all variables is the root `variables.tf`.
 | `enable_dicom` | `bool` | `false` | `false` |
 | `enable_legacy_ingress` | `bool` | `false` | `false` |
 | `enable_github_wif` | `bool` | `false` | `true` |
+| `enable_log_export` | `bool` | `true` | `true` |
+| `backend_logging_sample_rate` | `number` | `1.0` | `1.0` |
 | `github_repo` | `string` | `""` | `"example-org/example-repo"` |
 
 ### Application Configuration

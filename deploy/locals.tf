@@ -106,8 +106,8 @@ locals {
         enabled        = true
         securityPolicy = data.terraform_remote_state.infra.outputs.security_policy_name
         logging = {
-          enabled    = true
-          sampleRate = 1000000
+          enabled    = var.enable_log_export
+          sampleRate = var.backend_logging_sample_rate
         }
       }
       httpRoute = {

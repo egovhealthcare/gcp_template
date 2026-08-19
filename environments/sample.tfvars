@@ -61,6 +61,8 @@ enable_dicom          = false
 enable_legacy_ingress = false
 enable_cloud_armor    = true
 enable_github_wif     = false
+enable_log_export           = true
+backend_logging_sample_rate = 1.0
 enable_scribe         = false
 enable_jumphost       = true
 
