@@ -336,15 +336,22 @@ variable "legacy_fe_ip_name" {
 }
 
 variable "backend_logging_sample_rate" {
-  description = "Sample rate for GCP backend request logging (0.0 to 1.0)"
+  description = "Sampling rate for Gateway backend service access logs, applied only when enable_backend_access_logging is true. Must be an integer between 0 and 1000000; GKE divides it by 1000000 to derive the logged proportion (1000000 = all requests, 500000 = 50%, 0 = none)."
   type        = number
-  default     = 1.0
+  default     = 100000
+  nullable    = false
+
+  validation {
+    condition     = var.backend_logging_sample_rate == floor(var.backend_logging_sample_rate) && var.backend_logging_sample_rate >= 0 && var.backend_logging_sample_rate <= 1000000
+    error_message = "backend_logging_sample_rate must be an integer between 0 and 1000000."
+  }
 }
 
-variable "enable_log_export" {
-  description = "Enable backend request logging wiring for export-compatible environments"
+variable "enable_backend_access_logging" {
+  description = "Enable Cloud Logging access logs on the Gateway backend services (GCPBackendPolicy logging). Opt-in: access logs record full request URLs, which may contain patient identifiers, so enable only after reviewing data-retention and access controls. Log volume and cost scale with backend_logging_sample_rate."
   type        = bool
-  default     = true
+  default     = false
+  nullable    = false
 }
 
 variable "flow_logs_bucket" {
