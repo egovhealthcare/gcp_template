@@ -127,6 +127,12 @@ locals {
     }
     api = {
       replicaCount = var.helm_config.care_backend.api_replica_count
+      autoscaling = {
+        enabled                        = var.helm_config.care_backend.api_autoscaling_enabled
+        minReplicas                    = var.helm_config.care_backend.api_autoscaling_min_replicas
+        maxReplicas                    = var.helm_config.care_backend.api_autoscaling_max_replicas
+        targetCPUUtilizationPercentage = var.helm_config.care_backend.api_autoscaling_target_cpu
+      }
       podAnnotations = {
         "checksum/external-secret" = local.care_backend_secret_checksum
         "checksum/external-config" = local.care_backend_config_checksum
@@ -134,6 +140,12 @@ locals {
     }
     celeryWorker = {
       replicaCount = var.helm_config.care_backend.celery_worker_replica_count
+      autoscaling = {
+        enabled                        = var.helm_config.care_backend.celery_worker_autoscaling_enabled
+        minReplicas                    = var.helm_config.care_backend.celery_worker_autoscaling_min_replicas
+        maxReplicas                    = var.helm_config.care_backend.celery_worker_autoscaling_max_replicas
+        targetCPUUtilizationPercentage = var.helm_config.care_backend.celery_worker_autoscaling_target_cpu
+      }
       podAnnotations = {
         "checksum/external-secret" = local.care_backend_secret_checksum
         "checksum/external-config" = local.care_backend_config_checksum

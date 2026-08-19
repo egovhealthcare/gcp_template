@@ -27,13 +27,14 @@ dns_zone_domain = "example.org"
 # GKE node pool defaults (can add more pool objects if needed).
 node_pools = [
   {
-    name           = "default"
-    machine_type   = "e2-standard-2"
-    min_count      = 1
-    max_count      = 2
-    preemptible    = false
-    disk_size_gb   = 100
-    node_locations = "asia-south1-a,asia-south1-b"
+    name                 = "default"
+    machine_type         = "e2-standard-2"
+    min_count            = 1
+    max_count            = 2
+    preemptible          = false
+    disk_size_gb         = 100
+    node_locations       = "asia-south1-a,asia-south1-b"
+    enable_private_nodes = true
   },
 ]
 
@@ -87,6 +88,16 @@ helm_config = {
   care_backend = {
     repository = "asia-south1-docker.pkg.dev/example-project/staging/care"
     tag        = "latest"
+    # API autoscaling (CPU-based HPA, scales on requests)
+    # api_autoscaling_enabled      = true
+    # api_autoscaling_min_replicas = 2
+    # api_autoscaling_max_replicas = 6
+    # api_autoscaling_target_cpu   = 80
+    # Celery worker autoscaling (CPU-based HPA, scales on requests)
+    # celery_worker_autoscaling_enabled      = true
+    # celery_worker_autoscaling_min_replicas = 2
+    # celery_worker_autoscaling_max_replicas = 6
+    # celery_worker_autoscaling_target_cpu   = 80
   }
   care_frontend = {
     repository = "asia-south1-docker.pkg.dev/example-project/staging/care_fe"
@@ -94,7 +105,7 @@ helm_config = {
   }
   metabase = {
     repository = "metabase/metabase"
-    tag        = "v0.57.x"
+    tag        = "v0.63.13"
   }
   redis = {
     repository = "redis"
