@@ -86,6 +86,19 @@ if [[ "$TFVARS_PROJECT_ID" != "$PROJECT_ID" ]]; then
   exit 1
 fi
 
+# Extract region from tfvars for Secret Manager location policy.
+TFVARS_REGION="$(
+  grep -E '^[[:space:]]*region[[:space:]]*=' "$TFVARS_FILE" \
+    | head -n1 \
+    | sed -E 's/^[[:space:]]*region[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/'
+)"
+
+if [[ -z "$TFVARS_REGION" ]]; then
+  echo "ERROR: Could not find a 'region = \"...\"' entry in $TFVARS_FILE."
+  echo "       Region is required for Secret Manager location policy."
+  exit 1
+fi
+
 if [[ -z "$SECRET_NAME" ]]; then
   SECRET_NAME="tofu-tfvars-${ENV_NAME}"
 fi
@@ -101,10 +114,11 @@ fi
 if gcloud secrets describe "$SECRET_NAME" --project="$PROJECT_ID" >/dev/null 2>&1; then
   echo "Secret '$SECRET_NAME' exists (project: $PROJECT_ID). Adding a new version..."
 else
-  echo "Creating secret '$SECRET_NAME' (project: $PROJECT_ID)..."
+  echo "Creating secret '$SECRET_NAME' (project: $PROJECT_ID, location: $TFVARS_REGION)..."
   gcloud secrets create "$SECRET_NAME" \
     --project="$PROJECT_ID" \
-    --replication-policy=automatic
+    --replication-policy=user-managed \
+    --locations="$TFVARS_REGION"
 fi
 
 echo "Uploading tfvars to project '$PROJECT_ID'..."

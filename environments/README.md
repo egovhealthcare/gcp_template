@@ -59,11 +59,11 @@ export ENV_NAME="<environment-name>"
    make init BACKEND_BUCKET=<state-bucket>
    make plan PROJECT_ID=<gcp-project> ENV_NAME=<env> BACKEND_BUCKET=<state-bucket>
 
-   cd ../infra
+   cd ../KMS
    make init BACKEND_BUCKET=<state-bucket>
    make plan PROJECT_ID=<gcp-project> ENV_NAME=<env> BACKEND_BUCKET=<state-bucket>
 
-   cd ../KMS
+   cd ../infra
    make init BACKEND_BUCKET=<state-bucket>
    make plan PROJECT_ID=<gcp-project> ENV_NAME=<env> BACKEND_BUCKET=<state-bucket>
 

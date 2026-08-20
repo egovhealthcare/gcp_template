@@ -7,8 +7,8 @@ Infrastructure-as-code for the CARE application on Google Cloud Platform, using 
 | Directory | Purpose |
 |-----------|---------|
 | `pre-infra/` | Project-level bootstrap (API enablement, optional DNS zone) |
-| `infra/` | Core platform (VPC, GKE, Cloud SQL, GCS, Cloud Armor, GitHub WIF) |
 | `KMS/` | KMS key ring and encryption keys |
+| `infra/` | Core platform (VPC, GKE, Cloud SQL, GCS, Cloud Armor, GitHub WIF) |
 | `deploy/` | Kubernetes namespace, secrets, Helm releases |
 | `helm_charts/` | Application Helm charts (`care_be`, `care_fe`, `gateway`, `metabase`, `redis`, `dcm4chee`) |
 | `environments/` | Sample tfvars template and variable documentation |
@@ -19,11 +19,11 @@ Infrastructure-as-code for the CARE application on Google Cloud Platform, using 
 Modules must be applied sequentially:
 
 1. `pre-infra/`
-2. `infra/`
-3. `KMS/`
+2. `KMS/`
+3. `infra/`
 4. `deploy/`
 
-The `deploy/` module depends on remote state outputs from both `infra/` and `KMS/`.
+The `infra/` module references KMS keys created by `KMS/`. The `deploy/` module depends on remote state outputs from both `infra/` and `KMS/`.
 
 ## Configuration
 

@@ -1,4 +1,4 @@
-.PHONY: init plan deploy destroy lint pull-tfvars push-tfvars
+.PHONY: init plan deploy destroy lint output pull-tfvars push-tfvars
 
 # KMS reads variables from a tfvars file pulled from Secret Manager.
 # Required env vars:
@@ -53,3 +53,6 @@ destroy: pull-tfvars
 
 lint:
 	@tofu fmt -write=true -recursive
+
+output:
+	@tofu output

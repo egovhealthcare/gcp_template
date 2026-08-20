@@ -442,6 +442,17 @@ variable "scribe_sa_name" {
   default     = null
 }
 
+variable "wif_sa_name" {
+  description = "Override for the GitHub WIF service account ID. Defaults to <org>-<environment>-<app>-gh-deployer. Max 30 chars."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.wif_sa_name == null || (length(var.wif_sa_name) <= 30 && can(regex("^[a-z][a-z0-9-]{1,28}[a-z0-9]$", var.wif_sa_name)))
+    error_message = "wif_sa_name must be 30 characters or fewer, start with a lowercase letter, and contain only lowercase letters, digits, and hyphens."
+  }
+}
+
 variable "external_tls_cert" {
   description = "PEM-encoded TLS certificate (e.g. wildcard *.example.org) provided externally"
   type        = string

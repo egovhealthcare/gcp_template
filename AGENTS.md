@@ -11,11 +11,11 @@ Modules must be applied in the following order:
 | Order | Module | Purpose |
 |-------|--------|---------|
 | 1 | `pre-infra/` | Project bootstrap: API enablement, optional DNS zone |
-| 2 | `infra/` | VPC, GKE, Cloud SQL, GCS buckets, Cloud Armor, GitHub WIF |
-| 3 | `KMS/` | Key ring, encryption keys, and application secrets (`django_secret_key`, `django_admin_password`, `metabase_encryption_secret_key` via `random_password`) |
+| 2 | `KMS/` | Key ring, encryption keys, and application secrets (`django_secret_key`, `django_admin_password`, `metabase_encryption_secret_key` via `random_password`) |
+| 3 | `infra/` | VPC, GKE, Cloud SQL, GCS buckets, Cloud Armor, GitHub WIF |
 | 4 | `deploy/` | Kubernetes namespace, secrets, Helm releases |
 
-The `deploy/` module reads remote state from `infra` (prefix `infra`) and `KMS` (prefix `keys`) via `terraform_remote_state` data sources in `deploy/init.tf`.
+The `infra/` module references KMS keys created by `KMS/`. The `deploy/` module reads remote state from `infra` (prefix `infra`) and `KMS` (prefix `keys`) via `terraform_remote_state` data sources in `deploy/init.tf`.
 
 ## Build and Deploy
 
@@ -44,8 +44,8 @@ Set the following before running any target:
 | Module | Prefix |
 |--------|--------|
 | `pre-infra/` | `pre-infra` |
-| `infra/` | `infra` |
 | `KMS/` | `keys` |
+| `infra/` | `infra` |
 | `deploy/` | `deploy-backend` |
 
 > The `deploy/` module runs `tofu plan` with `-lock=false`. All other modules use normal locking.
@@ -72,7 +72,7 @@ The root `variables.tf` is symlinked into each module directory. Do not create s
 
 The following optional variables override auto-derived resource names. All default to `null`:
 
-`cluster_name`, `namespace_name`, `vpc_network_name`, `database_subnet_name`, `gke_subnet_name`, `pods_range_name`, `services_range_name`, `gateway_ip_name`, `legacy_ingress_ip_name`, `legacy_fe_ip_name`, `flow_logs_bucket`, `cloudsql_private_ip_name`, `nat_ip_address_name`
+`cluster_name`, `namespace_name`, `vpc_network_name`, `database_subnet_name`, `gke_subnet_name`, `pods_range_name`, `services_range_name`, `gateway_ip_name`, `legacy_ingress_ip_name`, `legacy_fe_ip_name`, `flow_logs_bucket`, `cloudsql_private_ip_name`, `nat_ip_address_name`, `wif_sa_name`
 
 ### Feature Flags
 
