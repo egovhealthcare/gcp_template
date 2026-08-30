@@ -221,7 +221,7 @@ variable "enable_legacy_ingress" {
 }
 
 variable "enable_local_cors" {
-  description = "Include localhost:4000 in backend CORS allowed origins"
+  description = "Include localhost:4000 in backend CORS allowed origins (development/non-production only)"
   type        = bool
   default     = false
 }
