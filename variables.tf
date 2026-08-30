@@ -220,6 +220,12 @@ variable "enable_legacy_ingress" {
   default     = false
 }
 
+variable "enable_local_cors" {
+  description = "Include localhost:4000 in backend CORS allowed origins"
+  type        = bool
+  default     = false
+}
+
 variable "enable_jumphost" {
   description = "Enable jumphost VM and related resources"
   type        = bool
