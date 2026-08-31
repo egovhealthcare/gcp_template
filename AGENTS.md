@@ -156,16 +156,40 @@ When provided, cert-manager only issues certificates for domains NOT covered by 
 
 ### Helm Config Variable Shape
 
-`var.helm_config` is a `map(map(string))` with the following expected keys:
+`var.helm_config` is a strictly typed `object({...})`, not a `map(map(string))`. Unknown keys are
+rejected and numeric/boolean attributes must be real numbers and booleans, not quoted strings.
+`care_backend` and `care_frontend` are required; `metabase` and `redis` are optional and default to
+pinned upstream images.
 
 ```hcl
 helm_config = {
-  care_backend  = { repository = "...", tag = "..." }
-  care_frontend = { repository = "...", tag = "..." }
-  metabase      = { repository = "...", tag = "..." }
-  redis         = { repository = "...", tag = "..." }
+  care_backend = {
+    repository = "..." # required
+    tag        = "..." # required
+    # All autoscaling attributes below are optional, shown with their defaults.
+    api_replica_count                      = 2
+    api_autoscaling_enabled                = false
+    api_autoscaling_min_replicas           = 2
+    api_autoscaling_max_replicas           = 6
+    api_autoscaling_target_cpu             = 80
+    celery_worker_replica_count            = 1
+    celery_worker_autoscaling_enabled      = false
+    celery_worker_autoscaling_min_replicas = 2
+    celery_worker_autoscaling_max_replicas = 6
+    celery_worker_autoscaling_target_cpu   = 80
+  }
+  care_frontend = {
+    repository = "..." # required
+    tag        = "..." # required
+  }
+  # Optional. Omit entirely to take the defaults.
+  metabase = { repository = "metabase/metabase", tag = "v0.63.13" }
+  redis    = { repository = "redis", tag = "8-alpine" }
 }
 ```
+
+Validation blocks enforce `min_replicas >= 1`, `min_replicas <= max_replicas`, and
+`1 <= target_cpu <= 100` for both the API and the Celery worker.
 
 ### Checksum-Based Pod Restarts
 
