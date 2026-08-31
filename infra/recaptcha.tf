@@ -2,16 +2,13 @@ locals {
   recaptcha_allowed_domains = distinct(concat(var.web_domain_name, var.api_domain_name, var.recaptcha_additional_domains))
 }
 
-# The key is always provisioned so that toggling var.enable_recaptcha off in the deploy
-# module only stops the secrets from reaching the workload.
 resource "google_recaptcha_enterprise_key" "care" {
   project      = var.project_id
   display_name = "${var.org}-${var.app}-${var.environment}"
   labels       = local.common_labels
 
   web_settings {
-    # CARE FE renders a v2 checkbox widget (react-google-recaptcha, g-recaptcha-response),
-    # so the key must be CHECKBOX. Switch to SCORE here when the frontend moves to v3.
+    # CARE FE renders a v2 checkbox, so SCORE would break login.
     integration_type  = "CHECKBOX"
     allow_all_domains = length(local.recaptcha_allowed_domains) == 0
     allowed_domains   = local.recaptcha_allowed_domains
@@ -27,11 +24,7 @@ resource "google_recaptcha_enterprise_key" "care" {
 
 data "google_client_config" "default" {}
 
-# The provider exposes no legacy secret key, so it is fetched from the
-# projects.keys.retrieveLegacySecretKey REST method. That secret is what
-# CARE's backend uses against https://www.google.com/recaptcha/api/siteverify.
-# Only fetched when the secrets are actually consumed, so environments with
-# reCAPTCHA disabled do not need the extra permission on every plan.
+# The provider exposes no secret key attribute, so it is fetched over REST.
 data "http" "recaptcha_legacy_secret" {
   count = var.enable_recaptcha ? 1 : 0
 
