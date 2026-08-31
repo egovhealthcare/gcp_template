@@ -117,7 +117,17 @@ the flag off never destroys a provisioned key.
   sensitive. Treat state and debug artifacts as secret-bearing.
 - The frontend bakes `REACT_RECAPTCHA_SITE_KEY` in at build time and cannot read the Kubernetes
   secret. Read the site key with `tofu output recaptcha_site_key` in `infra/` and set it in the FE
-  build environment.
+  build environment. The site key and secret key must come from the **same key pair** — `siteverify`
+  validates the browser token against the secret — so the FE rebuild and the `infra/` apply have to
+  land together, or every login submission fails validation.
+- Only `GOOGLE_RECAPTCHA_SECRET_KEY` is actually read by the backend (`config/ratelimit.py`).
+  `GOOGLE_RECAPTCHA_SITE_KEY` is loaded into Django settings and never referenced; it is injected
+  for parity with CARE's `.env.example`.
+- The captcha only triggers through the rate limiter, which counts through the Django cache backed
+  by `REDIS_URL`. Without Redis, or with `DISABLE_RATELIMIT=True`, the challenge never fires.
+  Conversely, when rate limiting is active but `enable_recaptcha` is off, a throttled user is locked
+  out for the whole window with no solvable challenge, because `validatecaptcha` always fails
+  against an empty secret.
 
 ### Provider Versions
 

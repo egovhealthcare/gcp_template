@@ -96,6 +96,9 @@ locals {
     }, var.enable_scribe ? {
     SCRIBE_GOOGLE_APPLICATION_CREDENTIALS_B64 = data.terraform_remote_state.infra.outputs.scribe_sa_key_b64
     } : {}, var.enable_recaptcha ? {
+    # Only the secret key is consumed, by config/ratelimit.py against siteverify.
+    # The site key is injected for parity with CARE's .env.example and for debugging;
+    # the frontend bakes its own copy in at Vite build time and cannot read this secret.
     GOOGLE_RECAPTCHA_SITE_KEY   = local.recaptcha_site_key
     GOOGLE_RECAPTCHA_SECRET_KEY = local.recaptcha_secret_key
     } : {}, var.additional_secrets, var.enable_dicom ? {
