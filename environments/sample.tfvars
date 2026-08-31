@@ -60,6 +60,7 @@ metabase_cloudsql_disk_size = 10
 # Feature toggles.
 enable_dicom          = false
 enable_legacy_ingress = false
+enable_local_cors     = false
 enable_cloud_armor    = true
 enable_github_wif     = false
 enable_scribe         = false
