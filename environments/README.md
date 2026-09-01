@@ -162,6 +162,6 @@ All default to `null`, allowing auto-derived names.
 | `gateway_ip_name` | `string` |
 | `legacy_ingress_ip_name` | `string` |
 | `legacy_fe_ip_name` | `string` |
-| `flow_logs_bucket` | `string` |
+| `logs_bucket` | `string` |
 | `cloudsql_private_ip_name` | `string` |
 | `nat_ip_address_name` | `string` |
