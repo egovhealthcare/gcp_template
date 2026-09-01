@@ -305,13 +305,13 @@ variable "helm_config" {
         try(resources.requests.memory, null) != null &&
         can(resources.limits.cpu) &&
         try(resources.limits.memory, null) != null &&
-        can(regex("^[0-9]+m$|^[0-9]+(\\.[0-9]+)?$", tostring(resources.requests.cpu))) &&
-        can(regex("^[0-9]+(Ki|Mi|Gi|Ti|Pi|Ei|K|M|G|T|P|E)?$", tostring(resources.requests.memory))) &&
-        can(regex("^[0-9]+(Ki|Mi|Gi|Ti|Pi|Ei|K|M|G|T|P|E)?$", tostring(resources.limits.memory))) &&
-        (try(resources.limits.cpu, null) == null || can(regex("^[0-9]+m$|^[0-9]+(\\.[0-9]+)?$", tostring(resources.limits.cpu))))
+        can(regex("^([0-9]+m|[0-9]+(\\.[0-9]+)?|\\.[0-9]+)$", tostring(resources.requests.cpu))) &&
+        can(regex("^([0-9]+(\\.[0-9]+)?|\\.[0-9]+)(Ki|Mi|Gi|Ti|Pi|Ei|K|M|G|T|P|E)?$", tostring(resources.requests.memory))) &&
+        can(regex("^([0-9]+(\\.[0-9]+)?|\\.[0-9]+)(Ki|Mi|Gi|Ti|Pi|Ei|K|M|G|T|P|E)?$", tostring(resources.limits.memory))) &&
+        (try(resources.limits.cpu, null) == null || can(regex("^([0-9]+m|[0-9]+(\\.[0-9]+)?|\\.[0-9]+)$", tostring(resources.limits.cpu))))
       )
     ])
-    error_message = "Each helm_config resource override must contain only requests.cpu, requests.memory, limits.cpu, and limits.memory. CPU must be a Kubernetes CPU quantity like 25m or 1; memory must be a Kubernetes memory quantity like 256Mi or 2Gi. Use limits.cpu = null only when intentionally removing the CPU limit."
+    error_message = "Each helm_config resource override must contain only requests.cpu, requests.memory, limits.cpu, and limits.memory. CPU must be a Kubernetes CPU quantity like 25m, 0.5, or 1; memory must be a Kubernetes memory quantity like 256Mi, 1.5Gi, or 2Gi. Use limits.cpu = null only when intentionally removing the CPU limit."
   }
 }
 
@@ -448,8 +448,8 @@ variable "wif_sa_name" {
   default     = null
 
   validation {
-    condition     = var.wif_sa_name == null || (length(var.wif_sa_name) <= 30 && can(regex("^[a-z][a-z0-9-]{1,28}[a-z0-9]$", var.wif_sa_name)))
-    error_message = "wif_sa_name must be 30 characters or fewer, start with a lowercase letter, and contain only lowercase letters, digits, and hyphens."
+    condition     = var.wif_sa_name == null || can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", var.wif_sa_name))
+    error_message = "wif_sa_name must be 6-30 characters, start with a lowercase letter, end with a lowercase letter or digit, and contain only lowercase letters, digits, and hyphens."
   }
 }
 
