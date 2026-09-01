@@ -48,7 +48,7 @@ Set the following before running any target:
 | `KMS/` | `keys` |
 | `deploy/` | `deploy-backend` |
 
-> The `infra/` and `deploy/` modules run `tofu plan` with `-lock=false`. `pre-infra/` and `KMS/` use normal locking.
+> The `infra/` and `deploy/` modules run `tofu plan` with `-lock=false`. `pre-infra/` and `KMS/` use normal locking. This applies to `plan` only — `apply` and `destroy` lock in every module. The split looks unintentional rather than designed; it has been there since the initial refactor and the four Makefiles are otherwise identical.
 
 ## Configuration
 
