@@ -27,13 +27,14 @@ dns_zone_domain = "example.org"
 # Exact single-node pool. total_min_count and total_max_count are pool-wide.
 node_pools = [
   {
-    name            = "default"
-    machine_type    = "e2-standard-2"
-    total_min_count = 1
-    total_max_count = 1
-    preemptible     = false
-    disk_size_gb    = 100
-    node_locations  = "asia-south1-a"
+    name                 = "default"
+    machine_type         = "e2-standard-2"
+    total_min_count      = 1
+    total_max_count      = 1
+    preemptible          = false
+    disk_size_gb         = 100
+    node_locations       = "asia-south1-a"
+    enable_private_nodes = true
   },
 ]
 
@@ -59,6 +60,7 @@ metabase_cloudsql_disk_size = 10
 # Feature toggles.
 enable_dicom          = false
 enable_legacy_ingress = false
+enable_local_cors     = false
 enable_cloud_armor    = true
 enable_github_wif     = false
 enable_scribe         = false
@@ -97,6 +99,16 @@ helm_config = {
       requests = { cpu = "25m", memory = "352Mi" }
       limits   = { cpu = null, memory = "2Gi" }
     }
+    # API autoscaling (CPU-based HPA, scales on requests)
+    # api_autoscaling_enabled      = true
+    # api_autoscaling_min_replicas = 2
+    # api_autoscaling_max_replicas = 6
+    # api_autoscaling_target_cpu   = 80
+    # Celery worker autoscaling (CPU-based HPA, scales on requests)
+    # celery_worker_autoscaling_enabled      = true
+    # celery_worker_autoscaling_min_replicas = 2
+    # celery_worker_autoscaling_max_replicas = 6
+    # celery_worker_autoscaling_target_cpu   = 80
   }
   care_frontend = {
     repository    = "asia-south1-docker.pkg.dev/example-project/staging/care_fe"
@@ -109,7 +121,7 @@ helm_config = {
   }
   metabase = {
     repository    = "metabase/metabase"
-    tag           = "v0.57.x"
+    tag           = "v0.63.13"
     replica_count = 1
     resources = {
       requests = { cpu = "50m", memory = "2Gi" }
