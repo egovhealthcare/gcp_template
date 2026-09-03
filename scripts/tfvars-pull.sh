@@ -9,7 +9,7 @@
 #
 # Usage:
 #   ./scripts/tfvars-pull.sh --project=PROJECT_ID --env=ENV [--out=FILE] \
-#       [--secret=SECRET_NAME] [--yes]
+#       [--secret=SECRET_NAME]
 #
 # Defaults:
 #   secret name: tofu-tfvars-{env}
@@ -21,10 +21,9 @@ PROJECT_ID=""
 ENV_NAME=""
 OUT_FILE=""
 SECRET_NAME=""
-YES=false
 
 usage() {
-  echo "Usage: $0 --project=PROJECT_ID --env=ENV [--out=FILE] [--secret=SECRET_NAME] [--yes]"
+  echo "Usage: $0 --project=PROJECT_ID --env=ENV [--out=FILE] [--secret=SECRET_NAME]"
   exit 1
 }
 
@@ -34,7 +33,6 @@ for arg in "$@"; do
     --env=*)     ENV_NAME="${arg#*=}" ;;
     --out=*)     OUT_FILE="${arg#*=}" ;;
     --secret=*)  SECRET_NAME="${arg#*=}" ;;
-    --yes|-y)    YES=true ;;
     -h|--help)   usage ;;
     *)           echo "Unknown argument: $arg"; usage ;;
   esac
@@ -73,7 +71,7 @@ else
   echo ""
 fi
 
-if [[ "$YES" != "true" ]]; then
+if [[ "${CI:-}" != "true" ]]; then
   printf "Overwrite %s with the remote version? [y/N] " "$OUT_FILE"
   read -r CONFIRM
   [[ "$CONFIRM" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }

@@ -113,7 +113,7 @@ fi
 
 # ── Confirmation prompt ──────────────────────────────────────────────────
 
-if [[ "$YES" != "true" ]]; then
+if [[ "$YES" != "true" && "${CI:-}" != "true" ]]; then
   printf "Push tfvars to secret '%s' in project '%s'? [y/N] " "$SECRET_NAME" "$PROJECT_ID"
   read -r CONFIRM
   [[ "$CONFIRM" =~ ^[Yy]$ ]] || { echo "Aborted."; exit 1; }

@@ -16,7 +16,6 @@ TFVARS_FILE ?= ../environments/$(ENV_NAME).tfvars
 LOCAL_TFVARS_FILE ?= $(TFVARS_FILE)
 TFVARS_ARGS := -var-file=$(TFVARS_FILE)
 APPROVE_FLAG := $(if $(filter true,$(AUTO_APPROVE)),-auto-approve)
-PULL_YES_FLAG := $(if $(filter true,$(PULL_YES)),--yes)
 PUSH_YES_FLAG := $(if $(filter true,$(PUSH_YES)),--yes)
 
 pull-tfvars:
@@ -27,8 +26,7 @@ pull-tfvars:
 		--project="$(PROJECT_ID)" \
 		--env="$(ENV_NAME)" \
 		--secret="$(TFVARS_SECRET_NAME)" \
-		--out="$(TFVARS_FILE)" \
-		$(PULL_YES_FLAG)
+		--out="$(TFVARS_FILE)"
 
 push-tfvars:
 	@test -n "$(PROJECT_ID)" || (echo "ERROR: PROJECT_ID (or TF_VAR_project_id) is required" && exit 1)
