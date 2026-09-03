@@ -44,5 +44,6 @@ key.json
 .terraform.lock.hcl
 
 # Temporary files
+.DS_Store
 tmp/
 deploy/generated_values
