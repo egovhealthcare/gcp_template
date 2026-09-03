@@ -1,4 +1,4 @@
-.PHONY: init plan deploy destroy lint output pull-tfvars push-tfvars force-pull-tfvars rebase-tfvars
+.PHONY: init plan deploy destroy lint output pull-tfvars push-tfvars
 
 # deploy reads variables from a tfvars file pulled from Secret Manager.
 # Required env vars:
@@ -16,10 +16,8 @@ TFVARS_FILE ?= ../environments/$(ENV_NAME).tfvars
 LOCAL_TFVARS_FILE ?= $(TFVARS_FILE)
 TFVARS_ARGS := -var-file=$(TFVARS_FILE)
 APPROVE_FLAG := $(if $(filter true,$(AUTO_APPROVE)),-auto-approve)
-PULL_FORCE_FLAG := $(if $(filter true,$(FORCE_PULL)),--force)
+PULL_YES_FLAG := $(if $(filter true,$(PULL_YES)),--yes)
 PUSH_YES_FLAG := $(if $(filter true,$(PUSH_YES)),--yes)
-PUSH_FORCE_FLAG := $(if $(filter true,$(FORCE_PUSH)),--force)
-PULL_REBASE_FLAG := $(if $(filter true,$(REBASE_PULL)),--rebase)
 
 pull-tfvars:
 	@test -n "$(PROJECT_ID)" || (echo "ERROR: PROJECT_ID (or TF_VAR_project_id) is required" && exit 1)
@@ -30,7 +28,7 @@ pull-tfvars:
 		--env="$(ENV_NAME)" \
 		--secret="$(TFVARS_SECRET_NAME)" \
 		--out="$(TFVARS_FILE)" \
-		$(PULL_FORCE_FLAG) $(PULL_REBASE_FLAG)
+		$(PULL_YES_FLAG)
 
 push-tfvars:
 	@test -n "$(PROJECT_ID)" || (echo "ERROR: PROJECT_ID (or TF_VAR_project_id) is required" && exit 1)
@@ -41,42 +39,20 @@ push-tfvars:
 		--env="$(ENV_NAME)" \
 		--secret="$(TFVARS_SECRET_NAME)" \
 		--file="$(LOCAL_TFVARS_FILE)" \
-		$(PUSH_YES_FLAG) $(PUSH_FORCE_FLAG)
-
-rebase-tfvars:
-	@test -n "$(PROJECT_ID)" || (echo "ERROR: PROJECT_ID (or TF_VAR_project_id) is required" && exit 1)
-	@test -n "$(ENV_NAME)" || (echo "ERROR: ENV_NAME (or TF_VAR_environment) is required" && exit 1)
-	@echo "[rebase-tfvars] project=$(PROJECT_ID) env=$(ENV_NAME) secret=$(TFVARS_SECRET_NAME)"
-	@../scripts/tfvars-pull.sh \
-		--project="$(PROJECT_ID)" \
-		--env="$(ENV_NAME)" \
-		--secret="$(TFVARS_SECRET_NAME)" \
-		--out="$(TFVARS_FILE)" \
-		--rebase
+		$(PUSH_YES_FLAG)
 
 init:
 	@tofu init \
 		-backend-config="bucket=$(BACKEND_BUCKET)" \
 		-backend-config="prefix=$(BACKEND_PREFIX)"
 
-force-pull-tfvars:
-	@test -n "$(PROJECT_ID)" || (echo "ERROR: PROJECT_ID (or TF_VAR_project_id) is required" && exit 1)
-	@test -n "$(ENV_NAME)" || (echo "ERROR: ENV_NAME (or TF_VAR_environment) is required" && exit 1)
-	@echo "[pull-tfvars] project=$(PROJECT_ID) env=$(ENV_NAME) secret=$(TFVARS_SECRET_NAME)"
-	@../scripts/tfvars-pull.sh \
-		--project="$(PROJECT_ID)" \
-		--env="$(ENV_NAME)" \
-		--secret="$(TFVARS_SECRET_NAME)" \
-		--out="$(TFVARS_FILE)" \
-		--force
-
-plan: force-pull-tfvars
+plan:
 	@tofu plan -lock=false $(TFVARS_ARGS)
 
-deploy: force-pull-tfvars
+deploy:
 	@tofu apply $(APPROVE_FLAG) $(TFVARS_ARGS)
 
-destroy: force-pull-tfvars
+destroy:
 	@tofu destroy $(APPROVE_FLAG) $(TFVARS_ARGS)
 
 lint:

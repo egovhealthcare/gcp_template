@@ -24,35 +24,26 @@ Each module directory contains a Makefile with the following targets:
 | Target | Description |
 |--------|-------------|
 | `make init` | Initialize OpenTofu with GCS backend |
-| `make pull-tfvars` | Pull tfvars from Secret Manager (guards against clobbering local edits) |
-| `make push-tfvars` | Push local tfvars to Secret Manager (compare-and-swap, diff, confirmation) |
-| `make plan` | Generate an execution plan (force-pulls remote tfvars first) |
-| `make deploy` | Apply infrastructure changes (force-pulls remote tfvars first) |
-| `make destroy` | Tear down resources (force-pulls remote tfvars first) |
-| `make rebase-tfvars` | 3-way merge local edits onto latest remote (like `git rebase`) |
+| `make pull-tfvars` | Pull tfvars from Secret Manager (shows a diff, asks to confirm) |
+| `make push-tfvars` | Push local tfvars to Secret Manager (shows a diff, asks to confirm) |
+| `make plan` | Generate an execution plan |
+| `make deploy` | Apply infrastructure changes |
+| `make destroy` | Tear down resources |
 | `make lint` | Format files recursively |
 
-#### Tfvars Safety Workflow
+#### Tfvars Workflow
 
-The pull/push scripts use a `.meta` sidecar file alongside the tfvars to track which Secret Manager version was pulled. This enables:
+Always pull before making changes. The pull/push scripts fetch the remote secret, show a diff against your local file, and ask for confirmation before writing. The diff is hidden when `CI=true` (GitHub Actions sets this automatically) so secret values never land in CI logs.
 
-- **Pull guard**: `make pull-tfvars` refuses to overwrite a locally-modified file (use `FORCE_PULL=true` to override).
-- **Push compare-and-swap**: `make push-tfvars` verifies the remote hasn't changed since your last pull. If someone else pushed, it aborts (use `FORCE_PUSH=true` to override).
-- **Push diff + confirmation**: shows a unified diff and prompts before uploading (use `PUSH_YES=true` to skip the prompt in CI).
-- **Auto-pull on plan/deploy/destroy**: these targets use `force-pull-tfvars` so they always get fresh remote state.
+- **Pull**: `make pull-tfvars` shows a diff (local → remote) and prompts before overwriting the local file (use `PULL_YES=true` to skip the prompt in CI).
+- **Push**: `make push-tfvars` shows a diff (remote → local) and prompts before uploading a new version (use `PUSH_YES=true` to skip the prompt in CI). It refuses to push if `project_id` in the file does not match the target project.
+- `plan`/`deploy`/`destroy` do NOT auto-pull. Run `make pull-tfvars` yourself first.
 
 Typical edit flow:
 ```bash
-make pull-tfvars          # pull latest from Secret Manager
+make pull-tfvars          # review diff, confirm, pull latest from Secret Manager
 # edit the local .tfvars file
-make push-tfvars          # see diff, confirm, push (fails if remote changed)
-```
-
-If someone else pushed while you were editing:
-```bash
-make rebase-tfvars        # 3-way merge your edits onto the new remote
-# resolve any conflict markers if needed
-make push-tfvars          # push the merged result
+make push-tfvars          # review diff, confirm, push
 ```
 
 ### Required Environment Variables
