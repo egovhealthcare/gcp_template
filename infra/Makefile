@@ -46,13 +46,13 @@ init:
 		-backend-config="bucket=$(BACKEND_BUCKET)" \
 		-backend-config="prefix=$(BACKEND_PREFIX)"
 
-plan:
+plan: pull-tfvars
 	@tofu plan -lock=false $(TFVARS_ARGS)
 
-deploy:
+deploy: pull-tfvars
 	@tofu apply $(APPROVE_FLAG) $(TFVARS_ARGS)
 
-destroy:
+destroy: pull-tfvars
 	@tofu destroy $(APPROVE_FLAG) $(TFVARS_ARGS)
 
 lint:
