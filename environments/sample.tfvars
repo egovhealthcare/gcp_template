@@ -138,8 +138,8 @@ helm_config = {
     }
   }
   care_metrics_exporter = {
-    # Optional overrides; defaults are the immutable image proven in Manipur:
-    # repository = "ghcr.io/jesbinjoseph/care-metrics-exporter"
+    # The exporter is always deployed. Override the image only when needed.
+    # repository = "ghcr.io/egovhealthcare/care-metrics-exporter"
     # tag        = "8ab2445d7cf88e6f335f1d951062c1b6f9df9a3d"
   }
 }
