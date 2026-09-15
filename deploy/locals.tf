@@ -99,12 +99,12 @@ locals {
     FACILITY_S3_BUCKET_ENDPOINT = "https://storage.googleapis.com"
     }, var.enable_scribe ? {
     SCRIBE_GOOGLE_APPLICATION_CREDENTIALS_B64 = data.terraform_remote_state.infra.outputs.scribe_sa_key_b64
-    } : {}, var.enable_recaptcha ? {
+    } : {}, var.additional_secrets, var.enable_recaptcha ? {
     # Only the secret key is read by the backend; the site key is set for parity
     # with CARE's .env.example. The frontend bakes its own copy in at build time.
     GOOGLE_RECAPTCHA_SITE_KEY   = local.recaptcha_site_key
     GOOGLE_RECAPTCHA_SECRET_KEY = local.recaptcha_secret_key
-    } : {}, var.additional_secrets, var.enable_dicom ? {
+    } : {}, var.enable_dicom ? {
     CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret[0].result
   } : {})
 

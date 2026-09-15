@@ -10,14 +10,14 @@ resource "google_recaptcha_enterprise_key" "care" {
   web_settings {
     # CARE FE renders a v2 checkbox, so SCORE would break login.
     integration_type  = "CHECKBOX"
-    allow_all_domains = length(local.recaptcha_allowed_domains) == 0
+    allow_all_domains = false
     allowed_domains   = local.recaptcha_allowed_domains
   }
 
   lifecycle {
     precondition {
-      condition     = !var.enable_recaptcha || length(local.recaptcha_allowed_domains) > 0
-      error_message = "enable_recaptcha requires at least one domain in web_domain_name, api_domain_name or recaptcha_additional_domains, otherwise the key would accept requests from any domain."
+      condition     = length(local.recaptcha_allowed_domains) > 0
+      error_message = "At least one domain must be set in web_domain_name, api_domain_name or recaptcha_additional_domains."
     }
   }
 }
@@ -28,10 +28,10 @@ data "google_client_config" "default" {}
 data "http" "recaptcha_legacy_secret" {
   count = var.enable_recaptcha ? 1 : 0
 
-  url = "https://recaptchaenterprise.googleapis.com/v1/projects/${var.project_id}/keys/${google_recaptcha_enterprise_key.care.name}:retrieveLegacySecretKey"
+  url = "https://recaptchaenterprise.googleapis.com/v1/${google_recaptcha_enterprise_key.care.id}:retrieveLegacySecretKey"
 
   request_headers = {
-    Authorization = join(" ", ["Bearer", data.google_client_config.default.access_token])
+    Authorization = "Bearer ${data.google_client_config.default.access_token}"
   }
 
   retry {
