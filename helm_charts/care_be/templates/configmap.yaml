@@ -10,4 +10,13 @@ data:
   {{ $key }}: {{ $value | quote }}
   {{- end }}
 {{- end }}
-
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "care-be.fullname" . }}-production-logging
+  labels:
+    {{- include "care-be.labels" . | nindent 4 }}
+data:
+  production_logging.py: |
+{{ .Files.Get "files/production_logging.py" | indent 4 }}
