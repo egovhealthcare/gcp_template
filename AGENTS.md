@@ -109,44 +109,16 @@ Boolean variables control optional infrastructure with `count` or `for_each`:
 
 ### reCAPTCHA
 
-`infra/recaptcha.tf` provisions a `google_recaptcha_enterprise_key` for every environment.
-`var.enable_recaptcha` only controls whether `GOOGLE_RECAPTCHA_SITE_KEY` and
-`GOOGLE_RECAPTCHA_SECRET_KEY` are merged into `local.secret_data` in `deploy/locals.tf`, so turning
-the flag off never destroys a provisioned key.
+`infra/recaptcha.tf` provisions a `google_recaptcha_enterprise_key` for every environment. `var.enable_recaptcha` only controls whether `GOOGLE_RECAPTCHA_SITE_KEY` and `GOOGLE_RECAPTCHA_SECRET_KEY` are merged into `local.secret_data` in `deploy/locals.tf`, so turning the flag off never destroys a provisioned key.
 
-- The key's `integration_type` is hardcoded to `CHECKBOX` in `infra/recaptcha.tf`. CARE FE renders
-  a v2 checkbox (`react-google-recaptcha`, `g-recaptcha-response`), so that is the only value that
-  works today. When the frontend moves to v3, change it to `SCORE` there — note this **replaces
-  the key and issues a new site key**.
-- Allowed domains are `web_domain_name` + `api_domain_name` + `var.recaptcha_additional_domains`.
-  All subdomains of a listed domain are allowed automatically. A precondition requires at least one
-  domain because the key is always provisioned; `allow_all_domains` is never enabled.
-- The provider does not export a secret key. The legacy secret (used by CARE's backend against
-  `https://www.google.com/recaptcha/api/siteverify`) is read with a `data "http"` call to
-  `projects.keys.retrieveLegacySecretKey`, authenticated with the access token from
-  `data.google_client_config`. It only runs when `enable_recaptcha` is set, and a `postcondition`
-  surfaces the API error on failure.
-- IAM: the principal applying `infra/` always needs reCAPTCHA key create/update permissions
-  because the key is provisioned regardless of the flag, plus
-  `recaptchaenterprise.keys.retrievelegacysecretkey` once `enable_recaptcha` is set.
-  `roles/recaptchaenterprise.admin` covers both. The GitHub WIF deployer applies `deploy/` only and
-  needs nothing extra.
-- The retrieved secret is stored in `infra/` state like every other provisioned credential, so it
-  is readable via `tofu show -json` and `TF_LOG` output even though the module output is marked
-  sensitive. Treat state and debug artifacts as secret-bearing.
-- The frontend bakes `REACT_RECAPTCHA_SITE_KEY` in at build time and cannot read the Kubernetes
-  secret. Read the site key with `tofu output recaptcha_site_key` in `infra/` and set it in the FE
-  build environment. The site key and secret key must come from the **same key pair** — `siteverify`
-  validates the browser token against the secret — so the FE rebuild and the `infra/` apply have to
-  land together, or every login submission fails validation.
-- Only `GOOGLE_RECAPTCHA_SECRET_KEY` is actually read by the backend (`config/ratelimit.py`).
-  `GOOGLE_RECAPTCHA_SITE_KEY` is loaded into Django settings and never referenced; it is injected
-  for parity with CARE's `.env.example`.
-- The captcha only triggers through the rate limiter, which counts through the Django cache backed
-  by `REDIS_URL`. Without Redis, or with `DISABLE_RATELIMIT=True`, the challenge never fires.
-  Conversely, when rate limiting is active but `enable_recaptcha` is off, a throttled user is locked
-  out for the whole window with no solvable challenge, because `validatecaptcha` always fails
-  against an empty secret.
+- The key's `integration_type` is hardcoded to `CHECKBOX` in `infra/recaptcha.tf`. CARE FE renders a v2 checkbox (`react-google-recaptcha`, `g-recaptcha-response`), so that is the only value that works today.
+- Allowed domains are `web_domain_name` + `api_domain_name` + `var.recaptcha_additional_domains`. All subdomains of a listed domain are allowed automatically.
+- The provider does not export a secret key. The legacy secret (used by CARE's backend against `https://www.google.com/recaptcha/api/siteverify`) is read with a `data "http"` call to `projects.keys.retrieveLegacySecretKey`, authenticated with the access token from `data.google_client_config`. It only runs when `enable_recaptcha` is set, and a `postcondition` surfaces the API error on failure.
+- IAM: the principal applying `infra/` always needs reCAPTCHA key create/update permissions because the key is provisioned regardless of the flag, plus `recaptchaenterprise.keys.retrievelegacysecretkey` once `enable_recaptcha` is set. `roles/recaptchaenterprise.admin` covers both. The GitHub WIF deployer applies `deploy/` only and needs nothing extra.
+- The retrieved secret is stored in `infra/` state like every other provisioned credential, so it is readable via `tofu show -json` and `TF_LOG` output even though the module output is marked sensitive. Treat state and debug artifacts as secret-bearing.
+- The frontend bakes `REACT_RECAPTCHA_SITE_KEY` in at build time and cannot read the Kubernetes secret. Read the site key with `tofu output recaptcha_site_key` in `infra/` and set it in the FE build environment. The site key and secret key must come from the **same key pair** — `siteverify` validates the browser token against the secret — so the FE rebuild and the `infra/` apply have to land together, or every login submission fails validation.
+- Only `GOOGLE_RECAPTCHA_SECRET_KEY` is actually read by the backend (`config/ratelimit.py`). `GOOGLE_RECAPTCHA_SITE_KEY` is loaded into Django settings and never referenced; it is injected for parity with CARE's `.env.example`.
+- The captcha only triggers through the rate limiter, which counts through the Django cache backed by `REDIS_URL`. Without Redis, or with `DISABLE_RATELIMIT=True`, the challenge never fires. Conversely, when rate limiting is active but `enable_recaptcha` is off, a throttled user is locked out for the whole window with no solvable challenge, because `validatecaptcha` always fails against an empty secret.
 
 ### Provider Versions
 
