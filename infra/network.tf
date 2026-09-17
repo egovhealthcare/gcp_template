@@ -44,6 +44,7 @@ module "vpc" {
       subnet_name               = local.gke_subnet_name
       subnet_ip                 = var.gke_subnets
       subnet_region             = var.region
+      subnet_private_access     = "true"
       subnet_flow_logs          = "true"
       subnet_flow_logs_metadata = "INCLUDE_ALL_METADATA"
       subnet_flow_logs_sampling = "0.5"
@@ -117,19 +118,5 @@ resource "google_compute_router_nat" "cloud_nat" {
   log_config {
     enable = true
     filter = "ERRORS_ONLY"
-  }
-}
-
-module "vpc_flow_logs_bucket" {
-  source  = "terraform-google-modules/cloud-storage/google"
-  version = "~> 10.0"
-
-  project_id = var.project_id
-  location   = var.region
-  names      = [local.flow_logs_bucket]
-
-  # Enforce uniform bucket-level access (no ACLs)
-  bucket_policy_only = {
-    (local.flow_logs_bucket) = true
   }
 }

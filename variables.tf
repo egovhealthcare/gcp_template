@@ -474,12 +474,6 @@ variable "legacy_fe_ip_name" {
   default     = null
 }
 
-variable "flow_logs_bucket" {
-  description = "Override for VPC flow logs bucket name"
-  type        = string
-  default     = null
-}
-
 variable "cloudsql_private_ip_name" {
   description = "Override for Cloud SQL private IP allocation name"
   type        = string
