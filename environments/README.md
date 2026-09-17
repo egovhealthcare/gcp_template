@@ -136,7 +136,13 @@ The source of truth for all variables is the root `variables.tf`.
 | `enable_jumphost` | `bool` | `true` | `true` |
 | `enable_local_cors` | `bool` | `false` | `false` |
 | `enable_scribe` | `bool` | `false` | `false` |
+| `enable_recaptcha` | `bool` | `false` | `false` |
 | `github_repo` | `string` | `""` | `"example-org/example-repo"` |
+
+When `enable_recaptcha` is true, apply `pre-infra/` and `infra/` before `deploy/`, then set the
+`infra/` module's `recaptcha_site_key` output in the frontend build. The applying principal needs
+`roles/recaptchaenterprise.admin`, and the legacy secret is stored in the `infra/` state. Because
+the key is always provisioned, at least one web, API, or additional reCAPTCHA domain is required.
 
 ### Application Configuration
 
@@ -149,6 +155,7 @@ The source of truth for all variables is the root `variables.tf`.
 | `additional_plugs` | `string` | `"[]"` | JSON-encoded plugin manifest; overwritten by the deploy pipeline from `build/care/care.env` on every run (edit it there, not in tfvars) |
 | `snowstorm_deployment_url` | `string` | `"https://terminology.10bedicu.in/fhir"` | `"https://terminology.example.org/fhir"` |
 | `metabase_encryption_secret_key_override` | `string` | `null` | `null` |
+| `recaptcha_additional_domains` | `list(string)` | `[]` | `["login.example.org"]` |
 
 ### Naming Overrides
 

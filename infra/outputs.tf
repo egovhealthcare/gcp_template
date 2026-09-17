@@ -5,6 +5,11 @@ output "gke_dns_endpoint" {
   value       = module.gke_cluster.endpoint_dns
 }
 
+output "cluster_name" {
+  description = "Name of the GKE cluster"
+  value       = module.gke_cluster.name
+}
+
 # --- Cloud SQL Outputs ---
 
 output "instance_address" {
@@ -151,5 +156,18 @@ output "github_wif_provider_name" {
 output "scribe_sa_key_b64" {
   description = "Base64-encoded service account JSON key for Scribe (only has aiplatform.user)"
   value       = try(google_service_account_key.scribe[0].private_key, "")
+  sensitive   = true
+}
+
+# --- reCAPTCHA Outputs ---
+
+output "recaptcha_site_key" {
+  description = "reCAPTCHA site key (public, safe to embed in the frontend build)"
+  value       = google_recaptcha_enterprise_key.care.name
+}
+
+output "recaptcha_secret_key" {
+  description = "Legacy reCAPTCHA secret key used with https://www.google.com/recaptcha/api/siteverify. Null unless enable_recaptcha is set."
+  value       = var.enable_recaptcha ? jsondecode(data.http.recaptcha_legacy_secret[0].response_body).legacySecretKey : null
   sensitive   = true
 }

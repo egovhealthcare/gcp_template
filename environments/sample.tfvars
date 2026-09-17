@@ -65,6 +65,12 @@ enable_cloud_armor    = true
 enable_github_wif     = false
 enable_scribe         = false
 enable_jumphost       = true
+enable_recaptcha      = false
+
+# reCAPTCHA. The key is always provisioned by infra/; enable_recaptcha only controls
+# whether the site/secret keys are injected into the CARE backend secret.
+# recaptcha_additional_domains is appended to web_domain_name and api_domain_name.
+recaptcha_additional_domains = []
 
 # Service account used by workloads/automation where applicable.
 service_account_email = "iac-tofu@example-project-id.iam.gserviceaccount.com"
@@ -137,7 +143,15 @@ helm_config = {
       limits   = { cpu = null, memory = "256Mi" }
     }
   }
+  care_metrics_exporter = {
+    # The exporter is always deployed. Override the image only when needed.
+    # repository = "ghcr.io/egovhealthcare/care-metrics-exporter"
+    # tag        = "8ab2445d7cf88e6f335f1d951062c1b6f9df9a3d"
+  }
 }
+
+# Optional. Omit this setting or leave it empty to create no email channels.
+monitoring_notification_emails = []
 
 # GitHub repository allowed to use Workload Identity Federation (owner/repo).
 github_repo = "example-org/example-repo"
