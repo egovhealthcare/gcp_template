@@ -280,7 +280,7 @@ variable "helm_config" {
     }), {})
     care_metrics_exporter = optional(object({
       repository = optional(string, "ghcr.io/egovhealthcare/care-metrics-exporter")
-      tag        = optional(string, "latest-4")
+      tag        = optional(string, "0dd9a2b917dcfeb9ed0c86fa4bea94a65198044a")
       queue      = optional(string, "celery")
       log_level  = optional(string, "INFO")
     }), {})
