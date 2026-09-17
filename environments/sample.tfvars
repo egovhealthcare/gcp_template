@@ -24,16 +24,16 @@ dicom_domain_name    = ["dicom.example.org"]
 enable_dns_zone = false
 dns_zone_domain = "example.org"
 
-# GKE node pool defaults (can add more pool objects if needed).
+# Exact single-node pool. total_min_count and total_max_count are pool-wide.
 node_pools = [
   {
     name                 = "default"
     machine_type         = "e2-standard-2"
-    min_count            = 1
-    max_count            = 2
+    total_min_count      = 1
+    total_max_count      = 1
     preemptible          = false
     disk_size_gb         = 100
-    node_locations       = "asia-south1-a,asia-south1-b"
+    node_locations       = "asia-south1-a"
     enable_private_nodes = true
   },
 ]
@@ -60,11 +60,18 @@ metabase_cloudsql_disk_size = 10
 # Feature toggles.
 enable_dicom          = false
 enable_legacy_ingress = false
+enable_local_cors     = false
 enable_cloud_armor    = true
 enable_github_wif     = false
 enable_log_export     = true
 enable_scribe         = false
 enable_jumphost       = true
+enable_recaptcha      = false
+
+# reCAPTCHA. The key is always provisioned by infra/; enable_recaptcha only controls
+# whether the site/secret keys are injected into the CARE backend secret.
+# recaptcha_additional_domains is appended to web_domain_name and api_domain_name.
+recaptcha_additional_domains = []
 
 # Service account used by workloads/automation where applicable.
 service_account_email = "iac-tofu@example-project-id.iam.gserviceaccount.com"
@@ -77,11 +84,28 @@ jumphost_ssh_keys = [
   },
 ]
 
-# Helm image/release configuration consumed by deploy module.
+# Single-replica TeleICU example. Complete resource blocks avoid implicit
+# fallback behavior; cpu = null removes CPU limits while retaining memory limits.
 helm_config = {
+  deployment_strategy = "Recreate"
   care_backend = {
-    repository = "asia-south1-docker.pkg.dev/example-project/staging/care"
-    tag        = "latest"
+    repository        = "asia-south1-docker.pkg.dev/example-project/staging/care"
+    tag               = "latest"
+    api_replica_count = 1
+    api_resources = {
+      requests = { cpu = "125m", memory = "864Mi" }
+      limits   = { cpu = null, memory = "2Gi" }
+    }
+    celery_worker_replica_count = 1
+    celery_worker_resources = {
+      requests = { cpu = "25m", memory = "384Mi" }
+      limits   = { cpu = null, memory = "3Gi" }
+    }
+    celery_beat_replica_count = 1
+    celery_beat_resources = {
+      requests = { cpu = "25m", memory = "352Mi" }
+      limits   = { cpu = null, memory = "2Gi" }
+    }
     # API autoscaling (CPU-based HPA, scales on requests)
     # api_autoscaling_enabled      = true
     # api_autoscaling_min_replicas = 2
@@ -94,18 +118,41 @@ helm_config = {
     # celery_worker_autoscaling_target_cpu   = 80
   }
   care_frontend = {
-    repository = "asia-south1-docker.pkg.dev/example-project/staging/care_fe"
-    tag        = "latest"
+    repository    = "asia-south1-docker.pkg.dev/example-project/staging/care_fe"
+    tag           = "latest"
+    replica_count = 1
+    resources = {
+      requests = { cpu = "25m", memory = "64Mi" }
+      limits   = { cpu = null, memory = "256Mi" }
+    }
   }
   metabase = {
-    repository = "metabase/metabase"
-    tag        = "v0.63.13"
+    repository    = "metabase/metabase"
+    tag           = "v0.63.13"
+    replica_count = 1
+    resources = {
+      requests = { cpu = "50m", memory = "2Gi" }
+      limits   = { cpu = null, memory = "3Gi" }
+    }
   }
   redis = {
-    repository = "redis"
-    tag        = "8-alpine"
+    repository    = "redis"
+    tag           = "8-alpine"
+    replica_count = 1
+    resources = {
+      requests = { cpu = "25m", memory = "32Mi" }
+      limits   = { cpu = null, memory = "256Mi" }
+    }
+  }
+  care_metrics_exporter = {
+    # The exporter is always deployed. Override the image only when needed.
+    # repository = "ghcr.io/egovhealthcare/care-metrics-exporter"
+    # tag        = "8ab2445d7cf88e6f335f1d951062c1b6f9df9a3d"
   }
 }
+
+# Optional. Omit this setting or leave it empty to create no email channels.
+monitoring_notification_emails = []
 
 # GitHub repository allowed to use Workload Identity Federation (owner/repo).
 github_repo = "example-org/example-repo"
@@ -136,6 +183,7 @@ services_range_name      = "gke-services-range"
 gateway_ip_name          = "care-pip-example-app-staging"
 legacy_ingress_ip_name   = "care-pip"
 legacy_fe_ip_name        = "care-fe"
+flow_logs_bucket         = "example-org-staging-vpc-flow-logs"
 cloudsql_private_ip_name = "cloudsql-private-ip"
 nat_ip_address_name      = "nat-ip-example-app-staging"
 # logs_bucket            = null  # uses default: {org}-{environment}-{app}-logs

@@ -19,8 +19,13 @@ locals {
   app_name       = var.app
   environment    = var.environment
 
+  cors_allowed_origins = concat(
+    [for d in var.web_domain_name : "https://${d}"],
+    var.enable_local_cors ? ["http://localhost:4000"] : []
+  )
+
   chart_hashes = {
-    for name in ["gateway", "redis", "metabase", "care_be", "care_fe", "dcm4chee"] :
+    for name in ["gateway", "redis", "metabase", "care_be", "care_fe", "dcm4chee", "care_metrics_exporter"] :
     name => sha1(join("", [
       for f in sort(fileset("${path.module}/../helm_charts/${name}", "**")) :
       filesha1("${path.module}/../helm_charts/${name}/${f}")
@@ -31,6 +36,11 @@ locals {
   certmanager_tls_secret_name = "${var.org}-${var.app}-${var.environment}-gateway-tls"
   external_tls_secret_name    = "${var.org}-${var.app}-${var.environment}-external-tls"
   use_external_tls            = var.external_tls_cert != null
+
+  # Null when the infra state predates these outputs; the precondition on
+  # kubernetes_secret.care_backend turns that into a readable error.
+  recaptcha_site_key   = try(data.terraform_remote_state.infra.outputs.recaptcha_site_key, null)
+  recaptcha_secret_key = try(data.terraform_remote_state.infra.outputs.recaptcha_secret_key, null)
 
   metabase_secret_data = {
     MB_DB_TYPE               = "postgres"
@@ -46,12 +56,12 @@ locals {
   config_map_data = merge({
     POSTGRES_PORT                                 = 5432
     DJANGO_SECURE_SSL_REDIRECT                    = "False"
-    DJANGO_SETTINGS_MODULE                        = "config.settings.production"
+    DJANGO_SETTINGS_MODULE                        = "config.settings.production_logging"
     BUCKET_PROVIDER                               = "gcp"
     BUCKET_REGION                                 = var.region
     CSRF_TRUSTED_ORIGINS                          = jsonencode(concat([for d in var.web_domain_name : "https://${d}"], [for d in var.api_domain_name : "https://${d}"]))
     DJANGO_ALLOWED_HOSTS                          = jsonencode(["*"])
-    CORS_ALLOWED_ORIGINS                          = jsonencode([for d in var.web_domain_name : "https://${d}"])
+    CORS_ALLOWED_ORIGINS                          = jsonencode(local.cors_allowed_origins)
     RATE_LIMIT                                    = "5/10m"
     AWS_REQUEST_CHECKSUM_CALCULATION              = "when_required"
     SNOWSTORM_DEPLOYMENT_URL                      = var.snowstorm_deployment_url
@@ -89,7 +99,12 @@ locals {
     FACILITY_S3_BUCKET_ENDPOINT = "https://storage.googleapis.com"
     }, var.enable_scribe ? {
     SCRIBE_GOOGLE_APPLICATION_CREDENTIALS_B64 = data.terraform_remote_state.infra.outputs.scribe_sa_key_b64
-    } : {}, var.additional_secrets, var.enable_dicom ? {
+    } : {}, var.additional_secrets, var.enable_recaptcha ? {
+    # Only the secret key is read by the backend; the site key is set for parity
+    # with CARE's .env.example. The frontend bakes its own copy in at build time.
+    GOOGLE_RECAPTCHA_SITE_KEY   = local.recaptcha_site_key
+    GOOGLE_RECAPTCHA_SECRET_KEY = local.recaptcha_secret_key
+    } : {}, var.enable_dicom ? {
     CARE_RADIOLOGY_WEBHOOK_SECRET = random_password.dicom_webhook_secret[0].result
   } : {})
 

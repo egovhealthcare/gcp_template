@@ -11,11 +11,11 @@ Modules must be applied in the following order:
 | Order | Module | Purpose |
 |-------|--------|---------|
 | 1 | `pre-infra/` | Project bootstrap: API enablement, optional DNS zone |
-| 2 | `infra/` | VPC, GKE, Cloud SQL, GCS buckets, Cloud Armor, GitHub WIF |
-| 3 | `KMS/` | Key ring, encryption keys, and application secrets (`django_secret_key`, `django_admin_password`, `metabase_encryption_secret_key` via `random_password`) |
+| 2 | `KMS/` | Key ring, encryption keys, and application secrets (`django_secret_key`, `django_admin_password`, `metabase_encryption_secret_key` via `random_password`) |
+| 3 | `infra/` | VPC, GKE, Cloud SQL, GCS buckets, Cloud Armor, GitHub WIF |
 | 4 | `deploy/` | Kubernetes namespace, secrets, Helm releases |
 
-The `deploy/` module reads remote state from `infra` (prefix `infra`) and `KMS` (prefix `keys`) via `terraform_remote_state` data sources in `deploy/init.tf`.
+The `infra/` module references KMS keys created by `KMS/`. The `deploy/` module reads remote state from `infra` (prefix `infra`) and `KMS` (prefix `keys`) via `terraform_remote_state` data sources in `deploy/init.tf`.
 
 ## Build and Deploy
 
@@ -24,12 +24,27 @@ Each module directory contains a Makefile with the following targets:
 | Target | Description |
 |--------|-------------|
 | `make init` | Initialize OpenTofu with GCS backend |
-| `make pull-tfvars` | Pull tfvars from Secret Manager |
+| `make pull-tfvars` | Pull tfvars from Secret Manager (shows a diff, asks to confirm) |
+| `make push-tfvars` | Push local tfvars to Secret Manager (shows a diff, asks to confirm) |
 | `make plan` | Generate an execution plan |
 | `make deploy` | Apply infrastructure changes |
 | `make destroy` | Tear down resources |
 | `make lint` | Format files recursively |
-| `make push-tfvars` | Push local tfvars to Secret Manager |
+
+#### Tfvars Workflow
+
+Always pull before making changes. The pull/push scripts fetch the remote secret, show a diff against your local file, and ask for confirmation before writing. The diff is hidden when `CI=true` (GitHub Actions sets this automatically) so secret values never land in CI logs.
+
+- **Pull**: `make pull-tfvars` shows a diff (local → remote) and prompts before overwriting the local file. The prompt is skipped automatically when `CI=true`.
+- **Push**: `make push-tfvars` shows a diff (remote → local) and prompts before uploading a new version (use `PUSH_YES=true` to skip the prompt in CI). It refuses to push if `project_id` in the file does not match the target project. If the Secret Manager secret does not exist yet, push creates it — so `make push-tfvars` is the required first step in a fresh project.
+- `plan`/`deploy`/`destroy` all depend on `pull-tfvars` and auto-pull before running.
+
+Typical edit flow:
+```bash
+make pull-tfvars          # review diff, confirm, pull latest from Secret Manager
+# edit the local .tfvars file
+make push-tfvars          # review diff, confirm, push
+```
 
 ### Required Environment Variables
 
@@ -44,11 +59,11 @@ Set the following before running any target:
 | Module | Prefix |
 |--------|--------|
 | `pre-infra/` | `pre-infra` |
-| `infra/` | `infra` |
 | `KMS/` | `keys` |
+| `infra/` | `infra` |
 | `deploy/` | `deploy-backend` |
 
-> The `deploy/` module runs `tofu plan` with `-lock=false`. All other modules use normal locking.
+> All modules use normal state locking.
 
 ## Configuration
 
@@ -72,7 +87,9 @@ The root `variables.tf` is symlinked into each module directory. Do not create s
 
 The following optional variables override auto-derived resource names. All default to `null`:
 
-`cluster_name`, `namespace_name`, `vpc_network_name`, `database_subnet_name`, `gke_subnet_name`, `pods_range_name`, `services_range_name`, `gateway_ip_name`, `legacy_ingress_ip_name`, `legacy_fe_ip_name`, `logs_bucket`, `cloudsql_private_ip_name`, `nat_ip_address_name`
+`cluster_name`, `namespace_name`, `vpc_network_name`, `database_subnet_name`, `gke_subnet_name`, `pods_range_name`, `services_range_name`, `gateway_ip_name`, `legacy_ingress_ip_name`, `legacy_fe_ip_name`, `logs_bucket`, `flow_logs_bucket`, `cloudsql_private_ip_name`, `nat_ip_address_name`, `proxy_only_subnet_name`, `scribe_sa_name`, `wif_sa_name`
+
+> GCP subnet, network, cluster, and static IP names are immutable. Set any override you need **before** the first apply.
 
 ### Feature Flags
 
@@ -85,10 +102,29 @@ Boolean variables control optional infrastructure with `count` or `for_each`:
 | `enable_github_wif` | GitHub Actions Workload Identity Federation |
 | `enable_legacy_ingress` | Legacy GCE Ingress resources |
 | `enable_dns_zone` | Cloud DNS managed zone |
+| `enable_recaptcha` | Injection of reCAPTCHA keys into the CARE backend secret (the key itself is always provisioned) |
+| `enable_jumphost` | Debian jumphost VM (**defaults to `true`**; creates a public-IP VM with `0.0.0.0/0` SSH and `prevent_destroy`) |
+| `enable_scribe` | Vertex AI scribe service account and exported key |
+| `enable_local_cors` | Adds `http://localhost:4000` to the backend CORS allowlist |
+
+### reCAPTCHA
+
+`infra/recaptcha.tf` provisions a `google_recaptcha_enterprise_key` for every environment. `var.enable_recaptcha` only controls whether `GOOGLE_RECAPTCHA_SITE_KEY` and `GOOGLE_RECAPTCHA_SECRET_KEY` are merged into `local.secret_data` in `deploy/locals.tf`, so turning the flag off never destroys a provisioned key.
+
+- The key's `integration_type` is hardcoded to `CHECKBOX` in `infra/recaptcha.tf`. CARE FE renders a v2 checkbox (`react-google-recaptcha`, `g-recaptcha-response`), so that is the only value that works today.
+- Allowed domains are `web_domain_name` + `api_domain_name` + `var.recaptcha_additional_domains`. All subdomains of a listed domain are allowed automatically.
+- The provider does not export a secret key. The legacy secret (used by CARE's backend against `https://www.google.com/recaptcha/api/siteverify`) is read with a `data "http"` call to `projects.keys.retrieveLegacySecretKey`, authenticated with the access token from `data.google_client_config`. It only runs when `enable_recaptcha` is set, and a `postcondition` surfaces the API error on failure.
+- IAM: the principal applying `infra/` always needs reCAPTCHA key create/update permissions because the key is provisioned regardless of the flag, plus `recaptchaenterprise.keys.retrievelegacysecretkey` once `enable_recaptcha` is set. `roles/recaptchaenterprise.admin` covers both. The GitHub WIF deployer applies `deploy/` only and needs nothing extra.
+- The retrieved secret is stored in `infra/` state like every other provisioned credential, so it is readable via `tofu show -json` and `TF_LOG` output even though the module output is marked sensitive. Treat state and debug artifacts as secret-bearing.
+- The frontend bakes `REACT_RECAPTCHA_SITE_KEY` in at build time and cannot read the Kubernetes secret. Read the site key with `tofu output recaptcha_site_key` in `infra/` and set it in the FE build environment. The site key and secret key must come from the **same key pair** — `siteverify` validates the browser token against the secret — so the FE rebuild and the `infra/` apply have to land together, or every login submission fails validation.
+- Only `GOOGLE_RECAPTCHA_SECRET_KEY` is actually read by the backend (`config/ratelimit.py`). `GOOGLE_RECAPTCHA_SITE_KEY` is loaded into Django settings and never referenced; it is injected for parity with CARE's `.env.example`.
+- The captcha only triggers through the rate limiter, which counts through the Django cache backed by `REDIS_URL`. Without Redis, or with `DISABLE_RATELIMIT=True`, the challenge never fires. Conversely, when rate limiting is active but `enable_recaptcha` is off, a throttled user is locked out for the whole window with no solvable challenge, because `validatecaptcha` always fails against an empty secret.
 
 ### Provider Versions
 
 All modules pin: `google`/`google-beta` `~> 6.33`, `random ~> 3.7`, OpenTofu `~> 1.11`.
+
+The `infra/` module additionally requires `http ~> 3.4` (reCAPTCHA legacy secret retrieval).
 
 The `deploy/` module additionally requires: `kubernetes ~> 2.0`, `helm ~> 2.0`, `tls ~> 4.0`, `local ~> 2.0`.
 
@@ -96,9 +132,11 @@ The `deploy/` module additionally requires: `kubernetes ~> 2.0`, `helm ~> 2.0`, 
 
 Helm values are defined as locals in `deploy/helm-values.tf` and passed directly to `helm_release` resources in `deploy/helm.tf` via `yamlencode()`. Chart-specific values are merged with `common_helm_values` (defined in `deploy/locals.tf`) at release time. File-based value generation under `deploy/generated_values/` is currently disabled.
 
-Local charts: `gateway`, `redis`, `metabase`, `care_be`, `care_fe`, `dcm4chee`.
+Local charts: `gateway`, `redis`, `metabase`, `care_be`, `care_fe`, `dcm4chee`, `care_metrics_exporter`.
 
 Additionally, `cert-manager` (`v1.19.4` from `https://charts.jetstack.io`) is installed as a hard dependency for TLS and Gateway API integration. The Gateway Helm release depends on cert-manager being ready.
+
+`care_metrics_exporter` uses Google Managed Service for Prometheus. Its chart creates a native `monitoring.googleapis.com/v1` `PodMonitoring`; do not replace it with a Prometheus Operator `ServiceMonitor`. The exporter receives only `CELERY_BROKER_URL` from the CARE backend Secret.
 
 ### External TLS Certificates
 
@@ -111,14 +149,15 @@ When provided, cert-manager only issues certificates for domains NOT covered by 
 
 ### Helm Config Variable Shape
 
-`var.helm_config` is a `map(map(string))` with the following expected keys:
+`var.helm_config` is an object containing non-DICOM image settings plus optional replica, resource, and rollout overrides. Resource overrides must be complete Kubernetes resource blocks; use `limits.cpu = null` to explicitly remove a CPU limit.
 
 ```hcl
 helm_config = {
-  care_backend  = { repository = "...", tag = "..." }
-  care_frontend = { repository = "...", tag = "..." }
-  metabase      = { repository = "...", tag = "..." }
-  redis         = { repository = "...", tag = "..." }
+  deployment_strategy = "Recreate"
+  care_backend  = { repository = "...", tag = "...", api_replica_count = 1 }
+  care_frontend = { repository = "...", tag = "...", replica_count = 1 }
+  metabase      = { repository = "...", tag = "...", replica_count = 1 }
+  redis         = { repository = "...", tag = "...", replica_count = 1 }
 }
 ```
 
@@ -134,7 +173,7 @@ Charts are located under `helm_charts/`. Refer to [.github/instructions/helm.ins
 
 | Component | Description |
 |-----------|-------------|
-| **GKE** | Regional cluster with Gateway API, Workload Identity (`terraform-google-modules/kubernetes-engine/google` ~> 36.3) |
+| **GKE** | Zonal cluster (`regional = false`, `zones = [var.zone]`) with Gateway API, Workload Identity, DNS-only control plane endpoint (`terraform-google-modules/kubernetes-engine/google` ~> 38.0) |
 | **Cloud SQL** | Two PostgreSQL 17 Enterprise instances (primary + Metabase), private IP, optional read replicas |
 | **GCS Buckets** | Three CMEK-encrypted buckets (patient, facility, DICOM) with HMAC access |
 | **Cloud Armor** | Regional security policy with OWASP rules and geo-blocking |
@@ -144,13 +183,13 @@ Charts are located under `helm_charts/`. Refer to [.github/instructions/helm.ins
 ## Secrets Flow
 
 ```
-infra/ (DB passwords, HMAC keys) ──┐
-                                    ├──→ deploy/locals.tf (secret maps) ──→ kubernetes_secret ──→ Pods
-KMS/ (Django secrets, Metabase key) ┘
+infra/ (DB passwords, HMAC keys, reCAPTCHA keys) ──┐
+                                                    ├──→ deploy/locals.tf (secret maps) ──→ kubernetes_secret ──→ Pods
+KMS/ (Django secrets, Metabase key) ────────────────┘
 ```
 
 Three secret maps in `deploy/locals.tf`:
-- `secret_data` — CARE backend (DB creds, GCS keys, Redis URL, Django secrets, JWKS) + `var.additional_secrets`
+- `secret_data` — CARE backend (DB creds, GCS keys, Redis URL, Django secrets, JWKS) + `var.additional_secrets` + reCAPTCHA keys when `enable_recaptcha`
 - `metabase_secret_data` — Metabase DB connection + encryption key
 - `dicom_secret_data` — DICOM DB + LDAP + GCS (conditional on `enable_dicom`)
 
@@ -176,3 +215,7 @@ Valid GCP credentials with cluster access are required.
 - `external_tls_cert` and `external_tls_key` must both be set or both null.
 - `enable_dicom` requires `dicom_domain_name` to be non-empty.
 - `service_account_email` must match `*.gserviceaccount.com`.
+- Changing the hardcoded `integration_type` in `infra/recaptcha.tf` replaces the key, so the site key changes and the frontend build must be updated.
+- `data.http.recaptcha_legacy_secret` only runs when `enable_recaptcha` is set. It needs `roles/recaptchaenterprise.admin` on the applying principal, and re-runs on every `infra/` plan.
+- `enable_recaptcha` is read by both `infra/` and `deploy/`. Apply `infra/` first after enabling it, otherwise the `kubernetes_secret.care_backend` precondition fails because the outputs are still null.
+- Existing environments must re-apply `pre-infra/` before the next `infra/` apply. The key is provisioned unconditionally, so `infra/` fails if `recaptchaenterprise.googleapis.com` has not been enabled.

@@ -1,0 +1,40 @@
+---
+description: Helm chart scaffolding and Gateway wiring
+globs: "helm_charts/**,deploy/helm*.tf"
+alwaysApply: false
+---
+
+# Helm charts
+
+Scaffold a new chart with:
+
+```bash
+helm create helm_charts/<name>
+```
+
+Then change the scaffold to this repo’s use case and delete unused default resources.
+
+External routing uses Gateway API (`HTTPRoute`, `BackendPolicy`). Legacy GCE Ingress is only when `enable_legacy_ingress` is set.
+
+Wire the chart in Terraform: values local in `deploy/helm-values.tf`, `helm_release` in `deploy/helm.tf` merged with `local.common_helm_values`, image fields on `var.helm_config` in root `variables.tf` and `environments/sample.tfvars`.
+
+`local.common_helm_values` in `deploy/locals.tf` is:
+
+```hcl
+global = {
+  cloudProvider = "gcp"
+  namespace     = local.namespace_name
+  gateway = {
+    name             = local.gateway_name
+    namespace        = local.namespace_name
+    gatewayClassName = "gke-l7-regional-external-managed"
+  }
+  backendPolicy = {
+    enabled        = true
+    securityPolicy = data.terraform_remote_state.infra.outputs.security_policy_name
+  }
+  httpRoute = {
+    enabled = true
+  }
+}
+```

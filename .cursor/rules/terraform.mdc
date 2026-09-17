@@ -1,0 +1,20 @@
+---
+description: OpenTofu apply order and wiring for this repo
+globs: "**/*.tf"
+alwaysApply: false
+---
+
+# Terraform / OpenTofu
+
+Apply modules in this order:
+
+1. `pre-infra/`
+2. `KMS/`
+3. `infra/`
+4. `deploy/`
+
+Edit variables only in the root `variables.tf`. Copies in module directories are symlinks; do not add a second variable file.
+
+Do not commit real tfvars. Pull and push with `scripts/tfvars-pull.sh` and `scripts/tfvars-push.sh`.
+
+New Helm charts: add chart-specific values in `deploy/helm-values.tf`, add a `helm_release` in `deploy/helm.tf` that merges `local.common_helm_values` with those values, and add the image/release fields on `var.helm_config` in root `variables.tf`.

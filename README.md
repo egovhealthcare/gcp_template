@@ -7,10 +7,10 @@ Infrastructure-as-code for the CARE application on Google Cloud Platform, using 
 | Directory | Purpose |
 |-----------|---------|
 | `pre-infra/` | Project-level bootstrap (API enablement, optional DNS zone) |
-| `infra/` | Core platform (VPC, GKE, Cloud SQL, GCS, Cloud Armor, GitHub WIF) |
 | `KMS/` | KMS key ring and encryption keys |
+| `infra/` | Core platform (VPC, GKE, Cloud SQL, GCS, Cloud Armor, GitHub WIF) |
 | `deploy/` | Kubernetes namespace, secrets, Helm releases |
-| `helm_charts/` | Application Helm charts (`care_be`, `care_fe`, `gateway`, `metabase`, `redis`, `dcm4chee`) |
+| `helm_charts/` | Application Helm charts (`care_be`, `care_fe`, `gateway`, `metabase`, `redis`, `dcm4chee`, `care_metrics_exporter`) |
 | `environments/` | Sample tfvars template and variable documentation |
 | `scripts/` | Helper scripts for tfvars synchronisation with Secret Manager |
 
@@ -19,11 +19,11 @@ Infrastructure-as-code for the CARE application on Google Cloud Platform, using 
 Modules must be applied sequentially:
 
 1. `pre-infra/`
-2. `infra/`
-3. `KMS/`
+2. `KMS/`
+3. `infra/`
 4. `deploy/`
 
-The `deploy/` module depends on remote state outputs from both `infra/` and `KMS/`.
+The `infra/` module references KMS keys created by `KMS/`. The `deploy/` module depends on remote state outputs from both `infra/` and `KMS/`.
 
 ## Configuration
 
@@ -66,6 +66,54 @@ make push-tfvars PROJECT_ID=<gcp-project> ENV_NAME=<env>
 ```
 
 Override the default file path with `LOCAL_TFVARS_FILE=<path>` if needed.
+
+## Workload Sizing
+
+Node capacity, replicas, and pod resources are independent tfvars inputs. There is no separate single-node application mode: an environment becomes single-node by configuring an exact one-node pool and resources that fit that node.
+
+Configure an exact one-node pool with pool-wide totals. GKE may temporarily create a surge node during node upgrades:
+
+```hcl
+node_pools = [
+  {
+    name            = "default"
+    machine_type    = "e2-standard-2"
+    total_min_count = 1
+    total_max_count = 1
+    preemptible     = false
+    disk_size_gb    = 100
+    node_locations  = "asia-south1-a"
+  },
+]
+```
+
+Set both totals to `2` for an exact two-node pool. Do not combine `total_min_count` or `total_max_count` with the per-location `min_count` or `max_count` fields.
+
+All application replica counts and resources can be configured independently in `helm_config`. Resource overrides must provide complete `requests` and `limits` maps. Set `limits.cpu = null` to remove the chart's CPU limit while retaining a memory limit. Omit a workload's resource block to use its existing default.
+
+Use `deployment_strategy = "Recreate"` for tightly packed single-node environments so a rollout does not require the old and replacement pods to fit simultaneously. This introduces brief workload downtime during updates. The default remains `RollingUpdate` for environments with rollout headroom.
+
+Replica counts accept non-negative integers. Increasing a replica count also multiplies that workload's requests; verify the new total against node allocatable capacity before applying. These controls do not configure DICOM workloads.
+
+## Celery Queue Monitoring
+
+The CARE metrics exporter is deployed by default. Use `helm_config` only to override its image:
+
+```hcl
+helm_config = {
+  # Existing service configuration omitted.
+  care_metrics_exporter = {
+    # Optional immutable image overrides.
+    # repository = "ghcr.io/egovhealthcare/care-metrics-exporter"
+    # tag        = "8ab2445d7cf88e6f335f1d951062c1b6f9df9a3d"
+  }
+}
+
+# Optional. Omit or leave empty to create no email channels.
+monitoring_notification_emails = ["care-ops@example.org"]
+```
+
+The exporter reads only `CELERY_BROKER_URL` from the existing CARE backend Secret. Google Managed Service for Prometheus scrapes it through a namespaced `PodMonitoring`; no self-hosted Prometheus or Prometheus Operator is installed. OpenTofu creates a CARE application dashboard containing Celery queue depth and an alert when the `celery` queue remains above 200 messages for five minutes. Queue depth measures waiting work only, not active or reserved Celery tasks.
 
 ## Security
 
