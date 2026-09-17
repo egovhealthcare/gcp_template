@@ -1,0 +1,43 @@
+---
+description: Helm chart conventions for CARE GKE deployments
+globs: "helm_charts/**,deploy/helm*.tf"
+alwaysApply: false
+---
+
+# Helm charts
+
+Charts live under `helm_charts/`: `gateway`, `redis`, `metabase`, `care_be`, `care_fe`, `dcm4chee`. Terraform owns releases in `deploy/helm.tf`.
+
+When adding a chart, scaffold first, then trim and adapt:
+
+```bash
+helm create helm_charts/<name>
+```
+
+Delete default templates you do not need (Ingress, HPA, extra Service, `tests/`, `NOTES.txt`, unused ServiceAccount, and similar). Keep and reshape the remaining Deployment/Service (and helpers) to match this repo: Gateway API (`httproute.yaml`, `backend-policy.yaml`) instead of Ingress, checksum annotations, explicit requests/limits and probes. Legacy GCE Ingress is `enable_legacy_ingress` only.
+
+Then:
+
+1. Define values as a local in `deploy/helm-values.tf` and pass them with `yamlencode()` on `helm_release`, merged with `common_helm_values`.
+2. Add image/replica fields to `var.helm_config` in root `variables.tf` and `environments/sample.tfvars`.
+
+Terraform injects:
+
+```yaml
+global:
+  cloudProvider: gcp
+  namespace: <namespace>
+  gateway:
+    name: care-regional-gateway
+    namespace: <namespace>
+    gatewayClassName: gke-l7-regional-external-managed
+  backendPolicy:
+    enabled: true
+    securityPolicy: <cloud-armor-policy-name>
+  httpRoute:
+    enabled: true
+```
+
+Charts should read `global.*` for routing and backend policy. Secrets via `envFromSecret` pointing at `deploy/secrets.tf`. Do not revive `deploy/generated_values/` (disabled).
+
+Full detail: `.github/instructions/helm.instructions.md`.

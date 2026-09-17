@@ -1,0 +1,20 @@
+---
+description: OpenTofu/Terraform conventions for this GCP IaC repo
+globs: "**/*.tf,**/Makefile"
+alwaysApply: false
+---
+
+# Terraform / OpenTofu
+
+- Apply order: `pre-infra/` → `KMS/` → `infra/` → `deploy/`.
+- Edit variables only in the root `variables.tf` (module copies are symlinks).
+- Consume `var.*` directly. Do not add `local.cfg` or JSON-decode config layers.
+- Naming: `coalesce(var.cluster_name, "${var.org}-${var.app}-${var.environment}")`.
+- Gate optional resources with `count` / `for_each` and existing flags (`enable_dicom`, `enable_cloud_armor`, `enable_github_wif`, `enable_legacy_ingress`, `enable_dns_zone`, `enable_scribe`, `enable_jumphost`, `enable_local_cors`).
+- Cross-module data: `data.terraform_remote_state.infra.outputs.<key>` (and `keys` for KMS). Prefixes: `pre-infra`, `infra`, `keys`, `deploy-backend`.
+- New secrets: add to the map in `deploy/locals.tf`; `deploy/secrets.tf` already wires `kubernetes_secret` from those maps. Export from upstream `outputs.tf` when needed.
+- New Helm charts: scaffold with `helm create helm_charts/<name>`, then trim unused default resources and adapt to this repo. Wire values in `deploy/helm-values.tf`, `helm_release` in `deploy/helm.tf` merged with `common_helm_values`, image fields on `var.helm_config`.
+- Format with `make lint` (`tofu fmt -recursive`) in the module directory. There is no unit test suite.
+- Never commit real `environments/*.tfvars`. Use `scripts/tfvars-pull.sh` / `scripts/tfvars-push.sh`.
+
+Full detail: `AGENTS.md`, `.github/instructions/terraform.instructions.md`.
