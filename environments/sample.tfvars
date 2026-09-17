@@ -182,7 +182,6 @@ services_range_name      = "gke-services-range"
 gateway_ip_name          = "care-pip-example-app-staging"
 legacy_ingress_ip_name   = "care-pip"
 legacy_fe_ip_name        = "care-fe"
-flow_logs_bucket         = "example-org-staging-vpc-flow-logs"
 cloudsql_private_ip_name = "cloudsql-private-ip"
 nat_ip_address_name      = "nat-ip-example-app-staging"
 
