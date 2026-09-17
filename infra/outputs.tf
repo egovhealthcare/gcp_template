@@ -1,14 +1,8 @@
 # --- GKE Outputs ---
 
-output "gke_endpoint" {
-  description = "The endpoint of the GKE cluster"
-  value       = module.gke_cluster.endpoint
-}
-
-output "cluster_ca_certificate" {
-  description = "The base64 encoded public certificate for the cluster"
-  value       = module.gke_cluster.ca_certificate
-  sensitive   = true
+output "gke_dns_endpoint" {
+  description = "The DNS-based endpoint of the GKE cluster"
+  value       = module.gke_cluster.endpoint_dns
 }
 
 # --- Cloud SQL Outputs ---

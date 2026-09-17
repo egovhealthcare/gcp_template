@@ -1,10 +1,12 @@
 resource "google_compute_address" "jumphost_ip" {
+  count   = var.enable_jumphost ? 1 : 0
   name    = "jumphost-ip-${var.app}-${var.environment}"
   region  = var.region
   project = var.project_id
 }
 
 resource "google_compute_instance" "jumphost" {
+  count        = var.enable_jumphost ? 1 : 0
   name         = "jumphost-${var.app}-${var.environment}"
   machine_type = "e2-medium"
   zone         = var.zone
@@ -30,7 +32,7 @@ resource "google_compute_instance" "jumphost" {
     subnetwork = local.gke_subnet_name
 
     access_config {
-      nat_ip = google_compute_address.jumphost_ip.address
+      nat_ip = google_compute_address.jumphost_ip[0].address
     }
   }
 
@@ -80,6 +82,7 @@ resource "google_compute_instance" "jumphost" {
 }
 
 resource "google_compute_firewall" "jumphost_ssh" {
+  count   = var.enable_jumphost ? 1 : 0
   name    = "jumphost-${var.app}-${var.environment}"
   network = module.vpc.network_name
   project = var.project_id

@@ -1,6 +1,6 @@
 module "gke_cluster" {
   source  = "terraform-google-modules/kubernetes-engine/google"
-  version = "~> 36.3"
+  version = "~> 38.0"
 
   project_id          = var.project_id
   name                = local.cluster_name
@@ -41,6 +41,12 @@ module "gke_cluster" {
   node_pools_oauth_scopes = {
     all = ["https://www.googleapis.com/auth/cloud-platform"]
   }
+
+  # Enable DNS-based control plane endpoint (IAM-secured access)
+  dns_allow_external_traffic = true
+
+  # Disable public IP endpoint — control plane is now private
+  ip_endpoints_enabled = false
 
   # → leave pools definition unchanged
   node_pools = var.node_pools
