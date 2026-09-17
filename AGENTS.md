@@ -102,13 +102,29 @@ Boolean variables control optional infrastructure with `count` or `for_each`:
 | `enable_github_wif` | GitHub Actions Workload Identity Federation |
 | `enable_legacy_ingress` | Legacy GCE Ingress resources |
 | `enable_dns_zone` | Cloud DNS managed zone |
+| `enable_recaptcha` | Injection of reCAPTCHA keys into the CARE backend secret (the key itself is always provisioned) |
 | `enable_jumphost` | Debian jumphost VM (**defaults to `true`**; creates a public-IP VM with `0.0.0.0/0` SSH and `prevent_destroy`) |
 | `enable_scribe` | Vertex AI scribe service account and exported key |
 | `enable_local_cors` | Adds `http://localhost:4000` to the backend CORS allowlist |
 
+### reCAPTCHA
+
+`infra/recaptcha.tf` provisions a `google_recaptcha_enterprise_key` for every environment. `var.enable_recaptcha` only controls whether `GOOGLE_RECAPTCHA_SITE_KEY` and `GOOGLE_RECAPTCHA_SECRET_KEY` are merged into `local.secret_data` in `deploy/locals.tf`, so turning the flag off never destroys a provisioned key.
+
+- The key's `integration_type` is hardcoded to `CHECKBOX` in `infra/recaptcha.tf`. CARE FE renders a v2 checkbox (`react-google-recaptcha`, `g-recaptcha-response`), so that is the only value that works today.
+- Allowed domains are `web_domain_name` + `api_domain_name` + `var.recaptcha_additional_domains`. All subdomains of a listed domain are allowed automatically.
+- The provider does not export a secret key. The legacy secret (used by CARE's backend against `https://www.google.com/recaptcha/api/siteverify`) is read with a `data "http"` call to `projects.keys.retrieveLegacySecretKey`, authenticated with the access token from `data.google_client_config`. It only runs when `enable_recaptcha` is set, and a `postcondition` surfaces the API error on failure.
+- IAM: the principal applying `infra/` always needs reCAPTCHA key create/update permissions because the key is provisioned regardless of the flag, plus `recaptchaenterprise.keys.retrievelegacysecretkey` once `enable_recaptcha` is set. `roles/recaptchaenterprise.admin` covers both. The GitHub WIF deployer applies `deploy/` only and needs nothing extra.
+- The retrieved secret is stored in `infra/` state like every other provisioned credential, so it is readable via `tofu show -json` and `TF_LOG` output even though the module output is marked sensitive. Treat state and debug artifacts as secret-bearing.
+- The frontend bakes `REACT_RECAPTCHA_SITE_KEY` in at build time and cannot read the Kubernetes secret. Read the site key with `tofu output recaptcha_site_key` in `infra/` and set it in the FE build environment. The site key and secret key must come from the **same key pair** — `siteverify` validates the browser token against the secret — so the FE rebuild and the `infra/` apply have to land together, or every login submission fails validation.
+- Only `GOOGLE_RECAPTCHA_SECRET_KEY` is actually read by the backend (`config/ratelimit.py`). `GOOGLE_RECAPTCHA_SITE_KEY` is loaded into Django settings and never referenced; it is injected for parity with CARE's `.env.example`.
+- The captcha only triggers through the rate limiter, which counts through the Django cache backed by `REDIS_URL`. Without Redis, or with `DISABLE_RATELIMIT=True`, the challenge never fires. Conversely, when rate limiting is active but `enable_recaptcha` is off, a throttled user is locked out for the whole window with no solvable challenge, because `validatecaptcha` always fails against an empty secret.
+
 ### Provider Versions
 
 All modules pin: `google`/`google-beta` `~> 6.33`, `random ~> 3.7`, OpenTofu `~> 1.11`.
+
+The `infra/` module additionally requires `http ~> 3.4` (reCAPTCHA legacy secret retrieval).
 
 The `deploy/` module additionally requires: `kubernetes ~> 2.0`, `helm ~> 2.0`, `tls ~> 4.0`, `local ~> 2.0`.
 
@@ -165,13 +181,13 @@ Charts are located under `helm_charts/`. Refer to [.github/instructions/helm.ins
 ## Secrets Flow
 
 ```
-infra/ (DB passwords, HMAC keys) ──┐
-                                    ├──→ deploy/locals.tf (secret maps) ──→ kubernetes_secret ──→ Pods
-KMS/ (Django secrets, Metabase key) ┘
+infra/ (DB passwords, HMAC keys, reCAPTCHA keys) ──┐
+                                                    ├──→ deploy/locals.tf (secret maps) ──→ kubernetes_secret ──→ Pods
+KMS/ (Django secrets, Metabase key) ────────────────┘
 ```
 
 Three secret maps in `deploy/locals.tf`:
-- `secret_data` — CARE backend (DB creds, GCS keys, Redis URL, Django secrets, JWKS) + `var.additional_secrets`
+- `secret_data` — CARE backend (DB creds, GCS keys, Redis URL, Django secrets, JWKS) + `var.additional_secrets` + reCAPTCHA keys when `enable_recaptcha`
 - `metabase_secret_data` — Metabase DB connection + encryption key
 - `dicom_secret_data` — DICOM DB + LDAP + GCS (conditional on `enable_dicom`)
 
@@ -197,3 +213,7 @@ Valid GCP credentials with cluster access are required.
 - `external_tls_cert` and `external_tls_key` must both be set or both null.
 - `enable_dicom` requires `dicom_domain_name` to be non-empty.
 - `service_account_email` must match `*.gserviceaccount.com`.
+- Changing the hardcoded `integration_type` in `infra/recaptcha.tf` replaces the key, so the site key changes and the frontend build must be updated.
+- `data.http.recaptcha_legacy_secret` only runs when `enable_recaptcha` is set. It needs `roles/recaptchaenterprise.admin` on the applying principal, and re-runs on every `infra/` plan.
+- `enable_recaptcha` is read by both `infra/` and `deploy/`. Apply `infra/` first after enabling it, otherwise the `kubernetes_secret.care_backend` precondition fails because the outputs are still null.
+- Existing environments must re-apply `pre-infra/` before the next `infra/` apply. The key is provisioned unconditionally, so `infra/` fails if `recaptchaenterprise.googleapis.com` has not been enabled.
