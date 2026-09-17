@@ -480,12 +480,6 @@ variable "logs_bucket" {
   default     = null
 }
 
-variable "flow_logs_bucket" {
-  description = "Override for VPC flow logs bucket name"
-  type        = string
-  default     = null
-}
-
 variable "enable_log_export" {
   description = "Enable log export to regional Cloud Logging bucket and GCS for data residency and indefinite retention"
   type        = bool
