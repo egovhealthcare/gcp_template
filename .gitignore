@@ -47,3 +47,6 @@ key.json
 .DS_Store
 tmp/
 deploy/generated_values
+
+# Local git worktrees (nested checkouts)
+.worktrees/
