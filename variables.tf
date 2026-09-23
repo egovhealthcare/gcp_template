@@ -286,42 +286,35 @@ variable "helm_config" {
     }), {})
     dcm4chee = optional(object({
       ldap = optional(object({
-        repository = optional(string, "dcm4che/slapd-dcm4chee")
-        tag        = optional(string, "2.6.8-34.1")
+        repository = optional(string)
+        tag        = optional(string)
       }), {})
       arc = optional(object({
-        repository = optional(string, "dcm4che/dcm4chee-arc-psql")
-        tag        = optional(string, "5.34.1")
+        repository = optional(string)
+        tag        = optional(string)
       }), {})
       ohif = optional(object({
-        repository = optional(string, "ohif/app")
-        tag        = optional(string, "v3.9.2")
+        repository = optional(string)
+        tag        = optional(string)
       }), {})
       nginx = optional(object({
-        repository = optional(string, "nginx")
-        tag        = optional(string, "alpine")
+        repository = optional(string)
+        tag        = optional(string)
       }), {})
       migration = optional(object({
-        repository = optional(string, "postgres")
-        tag        = optional(string, "17-alpine")
+        repository = optional(string)
+        tag        = optional(string)
       }), {})
     }), {})
   })
 
   validation {
     condition = alltrue([
-      for image in [
-        var.helm_config.dcm4chee.ldap,
-        var.helm_config.dcm4chee.arc,
-        var.helm_config.dcm4chee.ohif,
-        var.helm_config.dcm4chee.nginx,
-        var.helm_config.dcm4chee.migration,
-        ] : alltrue([
-          trimspace(image.repository) != "",
-          trimspace(image.tag) != "",
+      for image in values(var.helm_config.dcm4chee) : alltrue([
+        for field in [image.repository, image.tag] : field == null || trimspace(field) != ""
       ])
     ])
-    error_message = "All DICOM image repositories and tags must be non-empty."
+    error_message = "Provided DICOM image repositories and tags must be non-empty."
   }
 
   validation {
