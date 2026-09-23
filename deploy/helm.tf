@@ -127,6 +127,7 @@ resource "helm_release" "metabase" {
   depends_on = [
     helm_release.gateway,
     kubernetes_secret.metabase,
+    kubernetes_secret.metabase_etl,
   ]
 
   lifecycle {
