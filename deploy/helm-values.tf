@@ -230,6 +230,12 @@ locals {
     podAnnotations = {
       "checksum/external-secret" = local.dcm4chee_secret_checksum
     }
+    ohif = {
+      image = {
+        repository = var.helm_config.dcm4chee.repository
+        tag        = var.helm_config.dcm4chee.tag
+      }
+    }
     nginx = {
       authBackendUrl = "http://care-backend-care-be.${local.namespace_name}.svc.cluster.local:${local.care_backend_port}/api/care_radiology/dicom/authenticate/"
     }
