@@ -93,7 +93,9 @@ All application replica counts and resources can be configured independently in 
 
 Use `deployment_strategy = "Recreate"` for tightly packed single-node environments so a rollout does not require the old and replacement pods to fit simultaneously. This introduces brief workload downtime during updates. The default remains `RollingUpdate` for environments with rollout headroom.
 
-Replica counts accept non-negative integers. Increasing a replica count also multiplies that workload's requests; verify the new total against node allocatable capacity before applying. These controls do not configure DICOM workloads.
+Replica counts accept non-negative integers. Increasing a replica count also multiplies that workload's requests; verify the new total against node allocatable capacity before applying. These replica and resource controls do not configure DICOM workloads.
+
+DICOM image repositories and tags can be overridden independently through `helm_config.dcm4chee` in the environment tfvars. Use the component keys `ldap`, `arc`, `ohif`, `nginx`, and `migration`, each with optional `repository` and `tag` fields; invalid keys are rejected. Omit any component or field to retain its chart default. See `environments/sample.tfvars` for an example. The migration image must contain `psql` and a shell to run the chart's migration job.
 
 ## Celery Queue Monitoring
 
