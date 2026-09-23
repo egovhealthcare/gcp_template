@@ -284,22 +284,44 @@ variable "helm_config" {
       queue      = optional(string, "celery")
       log_level  = optional(string, "INFO")
     }), {})
-    dcm4chee = optional(map(object({
-      repository = optional(string)
-      tag        = optional(string)
-    })), {})
+    dcm4chee = optional(object({
+      ldap = optional(object({
+        repository = optional(string, "dcm4che/slapd-dcm4chee")
+        tag        = optional(string, "2.6.8-34.1")
+      }), {})
+      arc = optional(object({
+        repository = optional(string, "dcm4che/dcm4chee-arc-psql")
+        tag        = optional(string, "5.34.1")
+      }), {})
+      ohif = optional(object({
+        repository = optional(string, "ohif/app")
+        tag        = optional(string, "v3.9.2")
+      }), {})
+      nginx = optional(object({
+        repository = optional(string, "nginx")
+        tag        = optional(string, "alpine")
+      }), {})
+      migration = optional(object({
+        repository = optional(string, "postgres")
+        tag        = optional(string, "17-alpine")
+      }), {})
+    }), {})
   })
 
   validation {
-    condition = (
-      length(setsubtract(keys(var.helm_config.dcm4chee), ["ldap", "arc", "ohif", "nginx", "migration"])) == 0 &&
-      alltrue([
-        for image in values(var.helm_config.dcm4chee) : alltrue([
-          for field in [image.repository, image.tag] : field == null || trimspace(field) != ""
-        ])
+    condition = alltrue([
+      for image in [
+        var.helm_config.dcm4chee.ldap,
+        var.helm_config.dcm4chee.arc,
+        var.helm_config.dcm4chee.ohif,
+        var.helm_config.dcm4chee.nginx,
+        var.helm_config.dcm4chee.migration,
+        ] : alltrue([
+          trimspace(image.repository) != "",
+          trimspace(image.tag) != "",
       ])
-    )
-    error_message = "helm_config.dcm4chee supports only ldap, arc, ohif, nginx, and migration image overrides with non-empty repository and tag values."
+    ])
+    error_message = "All DICOM image repositories and tags must be non-empty."
   }
 
   validation {
