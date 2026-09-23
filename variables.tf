@@ -284,7 +284,23 @@ variable "helm_config" {
       queue      = optional(string, "celery")
       log_level  = optional(string, "INFO")
     }), {})
+    dcm4chee = optional(map(object({
+      repository = optional(string)
+      tag        = optional(string)
+    })), {})
   })
+
+  validation {
+    condition = (
+      length(setsubtract(keys(var.helm_config.dcm4chee), ["ldap", "arc", "ohif", "nginx", "migration"])) == 0 &&
+      alltrue([
+        for image in values(var.helm_config.dcm4chee) : alltrue([
+          for field in [image.repository, image.tag] : field == null || trimspace(field) != ""
+        ])
+      ])
+    )
+    error_message = "helm_config.dcm4chee supports only ldap, arc, ohif, nginx, and migration image overrides with non-empty repository and tag values."
+  }
 
   validation {
     condition = alltrue([

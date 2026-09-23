@@ -225,20 +225,28 @@ locals {
     var.helm_config.care_frontend.resources != null ? { resources = var.helm_config.care_frontend.resources } : {}
   )
 
-  dcm4chee_values = {
+  dcm4chee_image_values = {
+    for component, image in var.helm_config.dcm4chee : component => {
+      image = { for field, value in image : field => value if value != null }
+    }
+  }
+
+  dcm4chee_values = merge({
     dicomBaseUrl = var.enable_dicom ? "https://${var.dicom_domain_name[0]}" : ""
     podAnnotations = {
       "checksum/external-secret" = local.dcm4chee_secret_checksum
     }
-    nginx = {
+    nginx = merge({
       authBackendUrl = "http://care-backend-care-be.${local.namespace_name}.svc.cluster.local:${local.care_backend_port}/api/care_radiology/dicom/authenticate/"
-    }
+    }, try(local.dcm4chee_image_values.nginx, {}))
     httpRoute = {
       hostnames = var.dicom_domain_name
     }
     envFromSecret = var.enable_dicom ? [
       { name = kubernetes_secret.dcm4chee[0].metadata[0].name }
     ] : []
-  }
+    }, {
+    for component, values in local.dcm4chee_image_values : component => values if component != "nginx"
+  })
 
 }

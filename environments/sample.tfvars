@@ -148,6 +148,11 @@ helm_config = {
     # repository = "ghcr.io/egovhealthcare/care-metrics-exporter"
     # tag        = "8ab2445d7cf88e6f335f1d951062c1b6f9df9a3d"
   }
+  # Override only the DICOM images that differ from the chart defaults.
+  # dcm4chee = {
+  #   ohif      = { repository = "registry.example.org/ohif/app", tag = "v3.9.3" }
+  #   migration = { tag = "17.1-alpine" }
+  # }
 }
 
 # Optional. Omit this setting or leave it empty to create no email channels.
