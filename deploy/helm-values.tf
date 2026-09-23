@@ -227,8 +227,8 @@ locals {
 
   dcm4chee_image_values = {
     for component, image in var.helm_config.dcm4chee : component => {
-      image = { for field, value in image : field => value if value != null }
-    } if image.repository != null || image.tag != null
+      image = image
+    } if length(image) > 0
   }
 
   dcm4chee_values = merge({

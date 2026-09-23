@@ -284,37 +284,18 @@ variable "helm_config" {
       queue      = optional(string, "celery")
       log_level  = optional(string, "INFO")
     }), {})
-    dcm4chee = optional(object({
-      ldap = optional(object({
-        repository = optional(string)
-        tag        = optional(string)
-      }), {})
-      arc = optional(object({
-        repository = optional(string)
-        tag        = optional(string)
-      }), {})
-      ohif = optional(object({
-        repository = optional(string)
-        tag        = optional(string)
-      }), {})
-      nginx = optional(object({
-        repository = optional(string)
-        tag        = optional(string)
-      }), {})
-      migration = optional(object({
-        repository = optional(string)
-        tag        = optional(string)
-      }), {})
-    }), {})
+    dcm4chee = optional(map(map(string)), {})
   })
 
   validation {
     condition = alltrue([
-      for image in values(var.helm_config.dcm4chee) : alltrue([
-        for field in [image.repository, image.tag] : field == null || trimspace(field) != ""
+      for component, image in var.helm_config.dcm4chee :
+      contains(["ldap", "arc", "ohif", "nginx", "migration"], component) && alltrue([
+        for field, value in image :
+        contains(["repository", "tag"], field) && try(trimspace(value) != "", false)
       ])
     ])
-    error_message = "Provided DICOM image repositories and tags must be non-empty."
+    error_message = "DICOM overrides must use ldap, arc, ohif, nginx, or migration, with only non-empty repository and tag fields."
   }
 
   validation {
