@@ -144,8 +144,8 @@ helm_config = {
     }
   }
   dcm4chee = {
-    repository = "ghcr.io/care-ecosystem/radiology-ohif"
-    tag        = "dev-14-fd7d974"
+    repository = "ohif/app"
+    tag        = "v3.9.2"
   }
   care_metrics_exporter = {
     # The exporter is always deployed. Override the image only when needed.
