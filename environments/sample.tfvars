@@ -143,10 +143,6 @@ helm_config = {
       limits   = { cpu = null, memory = "256Mi" }
     }
   }
-  dcm4chee = {
-    repository = "ohif/app"
-    tag        = "v3.9.2"
-  }
   care_metrics_exporter = {
     # The exporter is always deployed. Override the image only when needed.
     # repository = "ghcr.io/egovhealthcare/care-metrics-exporter"

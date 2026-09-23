@@ -278,10 +278,6 @@ variable "helm_config" {
       replica_count = optional(number, 1)
       resources     = optional(any)
     }), {})
-    dcm4chee = optional(object({
-      repository = optional(string, "ohif/app")
-      tag        = optional(string, "v3.9.2")
-    }), {})
     care_metrics_exporter = optional(object({
       repository = optional(string, "ghcr.io/egovhealthcare/care-metrics-exporter")
       tag        = optional(string, "0dd9a2b917dcfeb9ed0c86fa4bea94a65198044a")
