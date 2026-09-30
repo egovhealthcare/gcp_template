@@ -13,8 +13,6 @@ resource "google_monitoring_dashboard" "care_application" {
       columns = 48
       tiles = [
         {
-          xPos   = 0
-          yPos   = 0
           width  = 48
           height = 20
           widget = {
@@ -35,7 +33,6 @@ resource "google_monitoring_dashboard" "care_application" {
           }
         },
         {
-          xPos   = 0
           yPos   = 20
           width  = 48
           height = 20
