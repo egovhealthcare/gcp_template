@@ -73,6 +73,9 @@ httpRedirect:
   name: "http-to-https-redirect"
   scheme: "https"
   statusCode: 301
+  acmeExemption:
+    enabled: true
+    path: "/.well-known/acme-challenge/"
 
 # cert-manager: ClusterIssuer + Certificate for Let's Encrypt TLS
 certmanager:
