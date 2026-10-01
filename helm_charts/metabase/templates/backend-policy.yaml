@@ -8,6 +8,9 @@ metadata:
     {{- include "metabase.labels" . | nindent 4 }}
 spec:
   default:
+    {{- with (tpl (.Values.backendPolicy.securityPolicy | default "") .) }}
+    securityPolicy: {{ . }}
+    {{- end }}
     timeoutSec: {{ .Values.backendPolicy.timeoutSec }}
     connectionDraining:
       drainingTimeoutSec: {{ .Values.backendPolicy.drainingTimeoutSec }}
