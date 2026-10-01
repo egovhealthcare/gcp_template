@@ -11,6 +11,12 @@ spec:
     - name: {{ include "gateway.gatewayName" . }}
       sectionName: {{ .Values.gateway.httpListener.name }}
   rules:
+{{- if .Values.httpRedirect.acmeExemption.enabled }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .Values.httpRedirect.acmeExemption.path | quote }}
+{{- end }}
     - filters:
         - type: RequestRedirect
           requestRedirect:
