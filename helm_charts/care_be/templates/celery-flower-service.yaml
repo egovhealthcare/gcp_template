@@ -1,0 +1,23 @@
+{{- if .Values.celeryFlower.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "care-be.fullname" . }}-celery-flower
+  labels:
+    {{- include "care-be.labels" . | nindent 4 }}
+    app.kubernetes.io/component: celery-flower
+  {{- with .Values.celeryFlower.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.celeryFlower.service.type }}
+  ports:
+    - port: {{ .Values.celeryFlower.service.port }}
+      targetPort: {{ .Values.celeryFlower.service.targetPort }}
+      protocol: TCP
+      name: flower
+  selector:
+    {{- include "care-be.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: celery-flower
+{{- end }}

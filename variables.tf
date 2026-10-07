@@ -226,6 +226,12 @@ variable "enable_local_cors" {
   default     = false
 }
 
+variable "enable_celery_flower" {
+  description = "Enable the Celery Flower monitoring deployment and its internal-only Service in the CARE backend chart"
+  type        = bool
+  default     = false
+}
+
 variable "enable_jumphost" {
   description = "Enable jumphost VM and related resources"
   type        = bool
