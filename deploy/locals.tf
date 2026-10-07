@@ -69,7 +69,9 @@ locals {
     MAX_ACTIVE_ENCOUNTERS_PER_PATIENT_IN_FACILITY = "1"
     ADDITIONAL_PLUGS                              = var.additional_plugs
     AUDIT_LOG_ENABLED                             = "True"
-    }, var.enable_scribe ? {
+    }, var.enable_celery_flower ? {
+    FLOWER_PORT = tostring(local.celery_flower_port)
+    } : {}, var.enable_scribe ? {
     SCRIBE_GOOGLE_PROJECT_ID     = var.project_id
     SCRIBE_GOOGLE_LOCATION       = var.region
     SCRIBE_CHAT_MODEL_NAME       = "google/gemini-2.5-flash"
@@ -99,6 +101,10 @@ locals {
     FACILITY_S3_BUCKET_ENDPOINT = "https://storage.googleapis.com"
     }, var.enable_scribe ? {
     SCRIBE_GOOGLE_APPLICATION_CREDENTIALS_B64 = data.terraform_remote_state.infra.outputs.scribe_sa_key_b64
+    } : {}, var.enable_celery_flower ? {
+    # Flower's web UI is only reachable in-cluster (port-forward/proxy); basic
+    # auth is still set so a stray Service exposure is not anonymous.
+    FLOWER_BASIC_AUTH = "${local.celery_flower_user}:${random_password.celery_flower_password[0].result}"
     } : {}, var.additional_secrets, var.enable_recaptcha ? {
     # Only the secret key is read by the backend; the site key is set for parity
     # with CARE's .env.example. The frontend bakes its own copy in at build time.
@@ -129,6 +135,12 @@ locals {
 
   # Care backend service port (used by DICOM nginx auth proxy)
   care_backend_port = 9000
+
+  # Celery Flower. The port is fixed to Flower's default and must match
+  # celeryFlower.service in helm_charts/care_be/values.yaml; the basic-auth
+  # password is generated in secrets.tf.
+  celery_flower_user = "flower"
+  celery_flower_port = 5555
 
   # Legacy ingress support (opt-in via config)
   enable_legacy_ingress  = var.enable_legacy_ingress

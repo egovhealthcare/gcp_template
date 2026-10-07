@@ -95,6 +95,44 @@ celeryBeat:
       cpu: 150m
       memory: 250Mi
 
+# Celery Flower configuration (internal only, never exposed through the Gateway)
+celeryFlower:
+  enabled: false
+  command:
+    - start-flower
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    port: 5555
+    targetPort: 5555
+    annotations: {}
+  livenessProbe:
+    enabled: true
+    httpGet:
+      path: /healthcheck
+      port: flower
+    initialDelaySeconds: 60
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 5
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /healthcheck
+      port: flower
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 5
+  resources:
+    limits:
+      # No CPU limit: Flower is a low-traffic monitoring UI and throttling it
+      # only makes the page slow. Memory stays capped.
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
 # Migration Job configuration
 migrationJob:
   enabled: false

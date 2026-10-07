@@ -64,6 +64,12 @@ resource "random_password" "dicom_webhook_secret" {
   special = false
 }
 
+resource "random_password" "celery_flower_password" {
+  count   = var.enable_celery_flower ? 1 : 0
+  length  = 32
+  special = false
+}
+
 resource "random_password" "ldap_admin_password" {
   length  = 32
   special = false
