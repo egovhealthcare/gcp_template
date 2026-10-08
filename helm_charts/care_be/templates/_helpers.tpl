@@ -59,3 +59,78 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
+{{/*
+Container image for every care-be workload, honouring an optional private registry
+*/}}
+{{- define "care-be.image" -}}
+{{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
+{{- if .Values.registry.enabled }}
+{{- if .Values.registry.port }}
+{{- printf "%s:%v/%s:%s" .Values.registry.host .Values.registry.port .Values.image.repository $imageTag | quote }}
+{{- else }}
+{{- printf "%s/%s:%s" .Values.registry.host .Values.image.repository $imageTag | quote }}
+{{- end }}
+{{- else }}
+{{- printf "%s:%s" .Values.image.repository $imageTag | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+env and envFrom blocks shared by every care-be container
+*/}}
+{{- define "care-be.envBlocks" -}}
+{{- if or .Values.env .Values.envFromSecretKey }}
+env:
+  {{- range .Values.env }}
+  - name: {{ .name }}
+    {{- if .valueFrom }}
+    valueFrom:
+      {{- if .valueFrom.secretKeyRef }}
+      secretKeyRef:
+        name: {{ .valueFrom.secretKeyRef.name }}
+        key: {{ .valueFrom.secretKeyRef.key }}
+      {{- end }}
+      {{- if .valueFrom.configMapKeyRef }}
+      configMapKeyRef:
+        name: {{ .valueFrom.configMapKeyRef.name }}
+        key: {{ .valueFrom.configMapKeyRef.key }}
+      {{- end }}
+    {{- else }}
+    value: {{ .value | quote }}
+    {{- end }}
+  {{- end }}
+  {{- range .Values.envFromSecretKey }}
+  - name: {{ .name }}
+    valueFrom:
+      secretKeyRef:
+        name: {{ .secretName }}
+        key: {{ .key }}
+  {{- end }}
+{{- end }}
+{{- if or .Values.envFromConfigMap .Values.envFromSecret (and .Values.configMap.enabled .Values.configMap.data) (and .Values.secret.enabled .Values.secret.data) }}
+envFrom:
+  {{- range .Values.envFromConfigMap }}
+  - configMapRef:
+      name: {{ .name }}
+      {{- if .prefix }}
+      prefix: {{ .prefix }}
+      {{- end }}
+  {{- end }}
+  {{- range .Values.envFromSecret }}
+  - secretRef:
+      name: {{ .name }}
+      {{- if .prefix }}
+      prefix: {{ .prefix }}
+      {{- end }}
+  {{- end }}
+  {{- if and .Values.configMap.enabled .Values.configMap.data }}
+  - configMapRef:
+      name: {{ include "care-be.fullname" . }}-config
+  {{- end }}
+  {{- if and .Values.secret.enabled .Values.secret.data }}
+  - secretRef:
+      name: {{ include "care-be.fullname" . }}-secret
+  {{- end }}
+{{- end }}
+{{- end }}
+
