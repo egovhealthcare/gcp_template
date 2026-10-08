@@ -1,4 +1,6 @@
 {{- if .Values.celeryFlower.enabled }}
+# Internal only: no NEG annotation, HTTPRoute or GCPBackendPolicy. Reach it with
+# kubectl port-forward.
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,15 +8,11 @@ metadata:
   labels:
     {{- include "care-be.labels" . | nindent 4 }}
     app.kubernetes.io/component: celery-flower
-  {{- with .Values.celeryFlower.service.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
 spec:
-  type: {{ .Values.celeryFlower.service.type }}
+  type: ClusterIP
   ports:
-    - port: {{ .Values.celeryFlower.service.port }}
-      targetPort: {{ .Values.celeryFlower.service.targetPort }}
+    - port: 5555
+      targetPort: flower
       protocol: TCP
       name: flower
   selector:

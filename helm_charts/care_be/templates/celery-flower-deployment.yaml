@@ -39,101 +39,34 @@ spec:
         - name: {{ .Chart.Name }}-celery-flower
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- if .Values.registry.enabled }}
-          {{- $registryHost := .Values.registry.host }}
-          {{- $registryPort := .Values.registry.port }}
-          {{- $imageRepo := .Values.image.repository }}
-          {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          {{- if $registryPort }}
-          image: "{{ $registryHost }}:{{ $registryPort }}/{{ $imageRepo }}:{{ $imageTag }}"
-          {{- else }}
-          image: "{{ $registryHost }}/{{ $imageRepo }}:{{ $imageTag }}"
-          {{- end }}
-          {{- else }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- end }}
+          image: {{ include "care-be.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if .Values.celeryFlower.command }}
+          # Entrypoint from the care_celery_flower plug; it listens on FLOWER_PORT,
+          # which defaults to 5555 in the plug.
           command:
-            {{- toYaml .Values.celeryFlower.command | nindent 12 }}
-          {{- end }}
+            - start-flower
           ports:
             - name: flower
-              containerPort: {{ .Values.celeryFlower.service.targetPort }}
+              containerPort: 5555
               protocol: TCP
-          {{- if or .Values.env .Values.envFromSecretKey }}
-          env:
-            {{- range .Values.env }}
-            - name: {{ .name }}
-              {{- if .valueFrom }}
-              valueFrom:
-                {{- if .valueFrom.secretKeyRef }}
-                secretKeyRef:
-                  name: {{ .valueFrom.secretKeyRef.name }}
-                  key: {{ .valueFrom.secretKeyRef.key }}
-                {{- end }}
-                {{- if .valueFrom.configMapKeyRef }}
-                configMapKeyRef:
-                  name: {{ .valueFrom.configMapKeyRef.name }}
-                  key: {{ .valueFrom.configMapKeyRef.key }}
-                {{- end }}
-              {{- else }}
-              value: {{ .value | quote }}
-              {{- end }}
-            {{- end }}
-            {{- range .Values.envFromSecretKey }}
-            - name: {{ .name }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .secretName }}
-                  key: {{ .key }}
-            {{- end }}
-          {{- end }}
-          {{- if or .Values.envFromConfigMap .Values.envFromSecret (and .Values.configMap.enabled .Values.configMap.data) (and .Values.secret.enabled .Values.secret.data) }}
-          envFrom:
-            {{- range .Values.envFromConfigMap }}
-            - configMapRef:
-                name: {{ .name }}
-                {{- if .prefix }}
-                prefix: {{ .prefix }}
-                {{- end }}
-            {{- end }}
-            {{- range .Values.envFromSecret }}
-            - secretRef:
-                name: {{ .name }}
-                {{- if .prefix }}
-                prefix: {{ .prefix }}
-                {{- end }}
-            {{- end }}
-            {{- if and .Values.configMap.enabled .Values.configMap.data }}
-            - configMapRef:
-                name: {{ include "care-be.fullname" . }}-config
-            {{- end }}
-            {{- if and .Values.secret.enabled .Values.secret.data }}
-            - secretRef:
-                name: {{ include "care-be.fullname" . }}-secret
-            {{- end }}
-          {{- end }}
-          {{- if .Values.celeryFlower.livenessProbe.enabled }}
+          {{- with include "care-be.envBlocks" . | trim }}{{ . | nindent 10 }}{{ end }}
+          # /healthcheck is not behind Flower's basic auth.
           livenessProbe:
             httpGet:
-              path: {{ .Values.celeryFlower.livenessProbe.httpGet.path | quote }}
-              port: {{ .Values.celeryFlower.livenessProbe.httpGet.port | quote }}
-            initialDelaySeconds: {{ .Values.celeryFlower.livenessProbe.initialDelaySeconds }}
-            periodSeconds: {{ .Values.celeryFlower.livenessProbe.periodSeconds }}
-            timeoutSeconds: {{ .Values.celeryFlower.livenessProbe.timeoutSeconds }}
-            failureThreshold: {{ .Values.celeryFlower.livenessProbe.failureThreshold }}
-          {{- end }}
-          {{- if .Values.celeryFlower.readinessProbe.enabled }}
+              path: /healthcheck
+              port: flower
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
           readinessProbe:
             httpGet:
-              path: {{ .Values.celeryFlower.readinessProbe.httpGet.path | quote }}
-              port: {{ .Values.celeryFlower.readinessProbe.httpGet.port | quote }}
-            initialDelaySeconds: {{ .Values.celeryFlower.readinessProbe.initialDelaySeconds }}
-            periodSeconds: {{ .Values.celeryFlower.readinessProbe.periodSeconds }}
-            timeoutSeconds: {{ .Values.celeryFlower.readinessProbe.timeoutSeconds }}
-            failureThreshold: {{ .Values.celeryFlower.readinessProbe.failureThreshold }}
-          {{- end }}
+              path: /healthcheck
+              port: flower
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
           resources:
             {{- toYaml .Values.celeryFlower.resources | nindent 12 }}
           volumeMounts:

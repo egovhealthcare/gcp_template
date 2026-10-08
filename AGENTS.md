@@ -168,7 +168,7 @@ Pod annotations include checksums computed from secret and config data (`sha256(
 
 ### Helm Charts
 
-Charts are located under `helm_charts/`. Refer to [.github/instructions/helm.instructions.md](.github/instructions/helm.instructions.md) for detailed conventions. All charts share an identical `_helpers.tpl` pattern for naming, labels, and service account helpers.
+Charts are located under `helm_charts/`. Refer to [.github/instructions/helm.instructions.md](.github/instructions/helm.instructions.md) for detailed conventions. All charts share an identical `_helpers.tpl` pattern for naming, labels, and service account helpers. `care_be` also defines `care-be.image` and `care-be.envBlocks`, which every backend workload (API, worker, beat, Flower, migration job) uses. Put image or env/envFrom changes there instead of in individual templates.
 
 ## Infrastructure Components
 
