@@ -99,6 +99,10 @@ locals {
     FACILITY_S3_BUCKET_ENDPOINT = "https://storage.googleapis.com"
     }, var.enable_scribe ? {
     SCRIBE_GOOGLE_APPLICATION_CREDENTIALS_B64 = data.terraform_remote_state.infra.outputs.scribe_sa_key_b64
+    } : {}, var.enable_celery_flower ? {
+    # Flower's web UI is only reachable in-cluster (port-forward/proxy); basic
+    # auth is still set so a stray Service exposure is not anonymous.
+    FLOWER_BASIC_AUTH = "flower:${random_password.celery_flower_password[0].result}"
     } : {}, var.additional_secrets, var.enable_recaptcha ? {
     # Only the secret key is read by the backend; the site key is set for parity
     # with CARE's .env.example. The frontend bakes its own copy in at build time.

@@ -106,6 +106,7 @@ Boolean variables control optional infrastructure with `count` or `for_each`:
 | `enable_jumphost` | Debian jumphost VM (**defaults to `true`**; creates a public-IP VM with `0.0.0.0/0` SSH and `prevent_destroy`) |
 | `enable_scribe` | Vertex AI scribe service account and exported key |
 | `enable_local_cors` | Adds `http://localhost:4000` to the backend CORS allowlist |
+| `enable_celery_flower` | Celery Flower deployment + internal-only ClusterIP Service in the `care_be` chart (defaults to `false`). Replicas, port and resources are fixed in the chart, not exposed as tfvars |
 
 ### reCAPTCHA
 
@@ -167,7 +168,7 @@ Pod annotations include checksums computed from secret and config data (`sha256(
 
 ### Helm Charts
 
-Charts are located under `helm_charts/`. Refer to [.github/instructions/helm.instructions.md](.github/instructions/helm.instructions.md) for detailed conventions. All charts share an identical `_helpers.tpl` pattern for naming, labels, and service account helpers.
+Charts are located under `helm_charts/`. Refer to [.github/instructions/helm.instructions.md](.github/instructions/helm.instructions.md) for detailed conventions. All charts share an identical `_helpers.tpl` pattern for naming, labels, and service account helpers. `care_be` also defines `care-be.image` and `care-be.envBlocks`, which every backend workload (API, worker, beat, Flower, migration job) uses. Put image or env/envFrom changes there instead of in individual templates.
 
 ## Infrastructure Components
 

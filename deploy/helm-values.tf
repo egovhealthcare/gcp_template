@@ -194,6 +194,14 @@ locals {
       },
       var.helm_config.care_backend.celery_beat_resources != null ? { resources = var.helm_config.care_backend.celery_beat_resources } : {}
     )
+    celeryFlower = {
+      enabled  = var.enable_celery_flower
+      strategy = { type = var.helm_config.deployment_strategy }
+      podAnnotations = {
+        "checksum/external-secret" = local.care_backend_secret_checksum
+        "checksum/external-config" = local.care_backend_config_checksum
+      }
+    }
     podAnnotations = {
       "checksum/external-secret" = local.care_backend_secret_checksum
       "checksum/external-config" = local.care_backend_config_checksum

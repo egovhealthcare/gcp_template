@@ -1,29 +1,32 @@
-{{- if .Values.celeryBeat.enabled }}
+{{- if .Values.celeryFlower.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "care-be.fullname" . }}-celery-beat
+  name: {{ include "care-be.fullname" . }}-celery-flower
   labels:
     {{- include "care-be.labels" . | nindent 4 }}
-    app.kubernetes.io/component: celery-beat
+    app.kubernetes.io/component: celery-flower
 spec:
   strategy:
-    {{- toYaml (.Values.celeryBeat.strategy | default (dict "type" "RollingUpdate")) | nindent 4 }}
-  replicas: {{ .Values.celeryBeat.replicaCount }}
+    {{- toYaml (.Values.celeryFlower.strategy | default (dict "type" "RollingUpdate")) | nindent 4 }}
+  # Flower holds task/event history in process memory. More than one replica
+  # behind the Service returns a different partial view per request, so this is
+  # intentionally not configurable.
+  replicas: 1
   selector:
     matchLabels:
       {{- include "care-be.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: celery-beat
+      app.kubernetes.io/component: celery-flower
   template:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- with .Values.celeryBeat.podAnnotations }}
+        {{- with .Values.celeryFlower.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
         {{- include "care-be.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: celery-beat
+        app.kubernetes.io/component: celery-flower
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -33,18 +36,39 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}-celery-beat
+        - name: {{ .Chart.Name }}-celery-flower
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: {{ include "care-be.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if .Values.celeryBeat.command }}
+          # Entrypoint from the care_celery_flower plug; it listens on FLOWER_PORT,
+          # which defaults to 5555 in the plug.
           command:
-            {{- toYaml .Values.celeryBeat.command | nindent 12 }}
-          {{- end }}
+            - start-flower
+          ports:
+            - name: flower
+              containerPort: 5555
+              protocol: TCP
           {{- with include "care-be.envBlocks" . | trim }}{{ . | nindent 10 }}{{ end }}
+          # /healthcheck is not behind Flower's basic auth.
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: flower
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: flower
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
           resources:
-            {{- toYaml .Values.celeryBeat.resources | nindent 12 }}
+            {{- toYaml .Values.celeryFlower.resources | nindent 12 }}
           volumeMounts:
             - name: production-logging
               mountPath: /app/config/settings/production_logging.py

@@ -40,19 +40,7 @@ spec:
         - name: {{ .Chart.Name }}-api
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          {{- if .Values.registry.enabled }}
-          {{- $registryHost := .Values.registry.host }}
-          {{- $registryPort := .Values.registry.port }}
-          {{- $imageRepo := .Values.image.repository }}
-          {{- $imageTag := .Values.image.tag | default .Chart.AppVersion }}
-          {{- if $registryPort }}
-          image: "{{ $registryHost }}:{{ $registryPort }}/{{ $imageRepo }}:{{ $imageTag }}"
-          {{- else }}
-          image: "{{ $registryHost }}/{{ $imageRepo }}:{{ $imageTag }}"
-          {{- end }}
-          {{- else }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          {{- end }}
+          image: {{ include "care-be.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- if .Values.api.command }}
           command:
@@ -62,59 +50,7 @@ spec:
             - name: http
               containerPort: {{ .Values.api.service.targetPort }}
               protocol: TCP
-          {{- if or .Values.env .Values.envFromSecretKey }}
-          env:
-            {{- range .Values.env }}
-            - name: {{ .name }}
-              {{- if .valueFrom }}
-              valueFrom:
-                {{- if .valueFrom.secretKeyRef }}
-                secretKeyRef:
-                  name: {{ .valueFrom.secretKeyRef.name }}
-                  key: {{ .valueFrom.secretKeyRef.key }}
-                {{- end }}
-                {{- if .valueFrom.configMapKeyRef }}
-                configMapKeyRef:
-                  name: {{ .valueFrom.configMapKeyRef.name }}
-                  key: {{ .valueFrom.configMapKeyRef.key }}
-                {{- end }}
-              {{- else }}
-              value: {{ .value | quote }}
-              {{- end }}
-            {{- end }}
-            {{- range .Values.envFromSecretKey }}
-            - name: {{ .name }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .secretName }}
-                  key: {{ .key }}
-            {{- end }}
-          {{- end }}
-          {{- if or .Values.envFromConfigMap .Values.envFromSecret (and .Values.configMap.enabled .Values.configMap.data) (and .Values.secret.enabled .Values.secret.data) }}
-          envFrom:
-            {{- range .Values.envFromConfigMap }}
-            - configMapRef:
-                name: {{ .name }}
-                {{- if .prefix }}
-                prefix: {{ .prefix }}
-                {{- end }}
-            {{- end }}
-            {{- range .Values.envFromSecret }}
-            - secretRef:
-                name: {{ .name }}
-                {{- if .prefix }}
-                prefix: {{ .prefix }}
-                {{- end }}
-            {{- end }}
-            {{- if and .Values.configMap.enabled .Values.configMap.data }}
-            - configMapRef:
-                name: {{ include "care-be.fullname" . }}-config
-            {{- end }}
-            {{- if and .Values.secret.enabled .Values.secret.data }}
-            - secretRef:
-                name: {{ include "care-be.fullname" . }}-secret
-            {{- end }}
-          {{- end }}
+          {{- with include "care-be.envBlocks" . | trim }}{{ . | nindent 10 }}{{ end }}
           {{- if .Values.api.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
