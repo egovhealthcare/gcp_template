@@ -130,6 +130,9 @@ migration:
   enabled: true
   backoffLimit: 3
   ttlSecondsAfterFinished: 600
+  image:
+    repository: postgres
+    tag: "17-alpine"
 
 # --- GCP Backend Policy ---
 backendPolicy:

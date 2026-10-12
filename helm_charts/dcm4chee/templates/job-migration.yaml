@@ -22,7 +22,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: migrate
-          image: postgres:17-alpine
+          image: "{{ .Values.migration.image.repository }}:{{ .Values.migration.image.tag }}"
           command: ["/bin/sh", "-c"]
           args:
             - |

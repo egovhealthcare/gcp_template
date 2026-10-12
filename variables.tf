@@ -284,7 +284,19 @@ variable "helm_config" {
       queue      = optional(string, "celery")
       log_level  = optional(string, "INFO")
     }), {})
+    dcm4chee = optional(map(map(string)), {})
   })
+
+  validation {
+    condition = alltrue([
+      for component, image in var.helm_config.dcm4chee :
+      contains(["ldap", "arc", "ohif", "nginx", "migration"], component) && alltrue([
+        for field, value in image :
+        contains(["repository", "tag"], field) && try(trimspace(value) != "", false)
+      ])
+    ])
+    error_message = "DICOM overrides must use ldap, arc, ohif, nginx, or migration, with only non-empty repository and tag fields."
+  }
 
   validation {
     condition = alltrue([
@@ -472,18 +484,6 @@ variable "legacy_fe_ip_name" {
   description = "Override for legacy frontend static IP name"
   type        = string
   default     = null
-}
-
-variable "logs_bucket" {
-  description = "Override for the logs GCS bucket name"
-  type        = string
-  default     = null
-}
-
-variable "enable_log_export" {
-  description = "Enable log export to regional Cloud Logging bucket and GCS for data residency and indefinite retention"
-  type        = bool
-  default     = true
 }
 
 variable "cloudsql_private_ip_name" {
