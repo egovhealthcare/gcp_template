@@ -91,14 +91,6 @@ module "cloudsql" {
     {
       name  = "log_temp_files"
       value = "0"
-    },
-    {
-      name  = "log_min_duration_statement"
-      value = "1000"
-    },
-    {
-      name  = "log_statement"
-      value = "mod"
     }
   ]
 
@@ -187,26 +179,6 @@ module "cloudsql" {
         {
           name  = "log_connections"
           value = "on"
-        },
-        {
-          name  = "log_disconnections"
-          value = "on"
-        },
-        {
-          name  = "log_lock_waits"
-          value = "on"
-        },
-        {
-          name  = "log_temp_files"
-          value = "0"
-        },
-        {
-          name  = "log_min_duration_statement"
-          value = "1000"
-        },
-        {
-          name  = "log_statement"
-          value = "mod"
         }
       ]
       ip_configuration = {
@@ -283,14 +255,6 @@ module "metabase_cloudsql" {
     {
       name  = "log_temp_files"
       value = "0"
-    },
-    {
-      name  = "log_min_duration_statement"
-      value = "1000"
-    },
-    {
-      name  = "log_statement"
-      value = "mod"
     },
     {
       name  = "cloudsql.enable_pg_cron"

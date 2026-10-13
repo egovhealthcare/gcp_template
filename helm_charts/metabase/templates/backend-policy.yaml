@@ -12,8 +12,8 @@ spec:
     connectionDraining:
       drainingTimeoutSec: {{ .Values.backendPolicy.drainingTimeoutSec }}
     logging:
-      enabled: {{ .Values.global.backendPolicy.logging.enabled }}
-      sampleRate: {{ .Values.global.backendPolicy.logging.sampleRate }}
+      enabled: true
+      sampleRate: 1000000
   targetRef:
     group: ""
     kind: Service
