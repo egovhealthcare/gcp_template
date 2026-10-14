@@ -106,7 +106,7 @@ Boolean variables control optional infrastructure with `count` or `for_each`:
 | `enable_jumphost` | Debian jumphost VM (**defaults to `true`**; creates a public-IP VM with `0.0.0.0/0` SSH and `prevent_destroy`) |
 | `enable_scribe` | Vertex AI scribe service account and exported key |
 | `enable_local_cors` | Adds `http://localhost:4000` to the backend CORS allowlist |
-| `enable_celery_flower` | Celery Flower deployment, internal-only ClusterIP Service and a Managed Prometheus `PodMonitoring` on `/metrics` in the `care_be` chart (defaults to `false`). Replicas, port and resources are fixed in the chart, not exposed as tfvars |
+| `enable_celery_flower` | Celery Flower deployment, internal-only ClusterIP Service and a Managed Prometheus `PodMonitoring` on `/metrics` in the `care_be` chart, plus a `google_monitoring_dashboard` of Flower's worker/task metrics in `deploy/celery-flower-monitoring.tf` (defaults to `false`). Replicas, port and resources are fixed in the chart, not exposed as tfvars |
 
 ### reCAPTCHA
 
