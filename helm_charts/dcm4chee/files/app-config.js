@@ -5,7 +5,7 @@ window.config = {
   extensions: [],
   modes: [],
   customizationService: {},
-  showStudyList: true,
+  showStudyList: false,
   investigationalUseDialog: 'never',
   maxNumberOfWebWorkers: 3,
   showWarningMessageForCrossOrigin: true,
