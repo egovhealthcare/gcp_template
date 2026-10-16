@@ -124,7 +124,7 @@ Boolean variables control optional infrastructure with `count` or `for_each`:
 
 All modules pin: `google`/`google-beta` `~> 6.33`, `random ~> 3.7`, OpenTofu `~> 1.11`.
 
-The `infra/` module additionally requires `http ~> 3.4` (reCAPTCHA legacy secret retrieval).
+The `infra/` module additionally requires `http ~> 3.4` (reCAPTCHA legacy secret retrieval), `tls ~> 4.0` and `vancluever/acme ~> 2.0` (Google Public CA account registration).
 
 The `deploy/` module additionally requires: `kubernetes ~> 2.0`, `helm ~> 2.0`, `tls ~> 4.0`, `local ~> 2.0`.
 
@@ -146,6 +146,32 @@ Optional variables allow injecting a wildcard TLS certificate instead of relying
 - `external_tls_base_domains` — list of base domains covered by the wildcard (required when cert is provided)
 
 When provided, cert-manager only issues certificates for domains NOT covered by the wildcard.
+
+### Gateway Certificates (cert-manager)
+
+- **One certificate per domain.** `local.domain_certificates` in `deploy/helm-values.tf` creates one cert-manager `Certificate` per domain, named `{org}-{app}-{env}-{domain}` (non `[a-z0-9-]` characters become `-`; the Secret adds `-tls`). A domain that fails HTTP-01 only blocks its own certificate. Every Secret goes into the HTTPS listener's `certificateRefs` and the load balancer picks one by SNI.
+- The listener takes at most 15 certificates, and two domains must not map to the same name (`a-b.x.org` / `a.b-x.org`). Preconditions on `helm_release.gateway` fail the plan for either.
+- `kubernetes_secret.domain_tls_placeholder` creates each Secret once (`ignore_changes = all`) so the Gateway is valid before issuance. If the old multi-domain Secret `{org}-{app}-{env}-gateway-tls` exists, placeholders are copies of it, so HTTPS stays valid during migration. The `removed` block keeps that old Secret in the cluster; delete it by hand once every per-domain certificate is Ready.
+
+### Certificate Authority Switch
+
+`tls_certificate_issuer` selects the CA: `"letsencrypt"` (default) or `"google"` (Google Public CA, for domains whose CAA record only allows `pki.goog`). It applies to the whole environment.
+
+For `"google"`:
+- `acme_email` is required: Google rejects ACME accounts without a contact. When set, it is also used on the ClusterIssuer for both CAs.
+- `pre-infra/` enables `publicca.googleapis.com`.
+- `infra/public-ca.tf` creates an RSA account key, a single-use EAB key (`google_public_ca_external_account_key`), and registers the ACME account with `vancluever/acme` `acme_registration` in the **same apply**. The EAB key is consumed immediately, so its 7-day expiry only matters if that registration fails and is retried more than 7 days later (recover with the `-replace` below).
+- `deploy/` writes the account key (infra output `acme_account_private_key`) into Secret `google-public-ca-account-key` in the `cert-manager` namespace, and the ClusterIssuer sets `disableAccountKeyGeneration: true`. A rebuilt cluster reuses the same account and never needs a new EAB key.
+- The principal applying `infra/` needs `roles/publicca.externalAccountKeyCreator`. CAA records must allow `pki.goog`.
+- Destroying `acme_registration` (for example, switching back to `letsencrypt`) deactivates the account at Google. Issued certificates keep working until they expire.
+- `acme_registration` ignores changes to `email_address` and `external_account_binding`: any change would replace it, which deactivates the account, and a deactivated key cannot register again. Changing `acme_email` only updates the ClusterIssuer; cert-manager then updates the contact on the existing account.
+- To start over with a new account: `tofu apply -replace='tls_private_key.acme_account[0]'` in `infra/`, then apply `deploy/` right away. This replaces the EAB key and the registration with it. Never `-replace` only the EAB key or the registration: that deactivates the account without a new key to register.
+
+Switching CA renames the ClusterIssuer (`letsencrypt-prod` ↔ `google-public-ca`), which makes cert-manager reissue every certificate. The old certificates keep serving until the new ones are Ready.
+
+- To `google`: apply `pre-infra/` → `infra/` → `deploy/`.
+- Back to `letsencrypt`: apply `deploy/` first and wait until every certificate is Ready, then `infra/` (which deactivates the Google account). The reverse order leaves the ClusterIssuer on a deactivated account, so renewals fail until `deploy/` runs.
+- A ClusterIssuer deleted by hand is not recreated by Tofu (the Helm release is unchanged). Restore it with `helm upgrade gateway helm_charts/gateway -n <namespace> --reuse-values`.
 
 ### Helm Config Variable Shape
 

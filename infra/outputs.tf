@@ -171,3 +171,11 @@ output "recaptcha_secret_key" {
   value       = var.enable_recaptcha ? jsondecode(data.http.recaptcha_legacy_secret[0].response_body).legacySecretKey : null
   sensitive   = true
 }
+
+# --- Google Public CA Outputs ---
+
+output "acme_account_private_key" {
+  description = "Private key of the Google Public CA ACME account, given to cert-manager by deploy/. Null unless tls_certificate_issuer is \"google\"."
+  value       = local.use_google_public_ca ? tls_private_key.acme_account[0].private_key_pem : null
+  sensitive   = true
+}

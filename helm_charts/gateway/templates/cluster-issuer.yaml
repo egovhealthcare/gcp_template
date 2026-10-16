@@ -8,8 +8,14 @@ metadata:
 spec:
   acme:
     server: {{ .Values.certmanager.clusterIssuer.server }}
+    {{- with .Values.certmanager.clusterIssuer.email }}
+    email: {{ . | quote }}
+    {{- end }}
     privateKeySecretRef:
       name: {{ .Values.certmanager.clusterIssuer.privateKeySecretName }}
+    {{- if .Values.certmanager.clusterIssuer.disableAccountKeyGeneration }}
+    disableAccountKeyGeneration: true
+    {{- end }}
     solvers:
       - http01:
           gatewayHTTPRoute:

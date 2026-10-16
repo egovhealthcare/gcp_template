@@ -31,6 +31,9 @@ module "project_services" {
     var.enable_scribe ? [
       "aiplatform.googleapis.com",
     ] : [],
+    var.tls_certificate_issuer == "google" ? [
+      "publicca.googleapis.com",
+    ] : [],
   )
 
   enable_apis                 = true

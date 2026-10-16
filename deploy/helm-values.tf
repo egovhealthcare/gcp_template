@@ -6,7 +6,7 @@ locals {
   dcm4chee_secret_checksum     = var.enable_dicom ? nonsensitive(sha256(jsonencode(local.dicom_secret_data))) : ""
 
   # External wildcard TLS: filter out domains already covered by the wildcard
-  all_domains = concat(var.web_domain_name, var.api_domain_name, var.metabase_domain_name, var.dicom_domain_name)
+  all_domains = distinct(concat(var.web_domain_name, var.api_domain_name, var.metabase_domain_name, var.dicom_domain_name))
 
   # Domains that still need cert-manager (i.e. NOT covered by the wildcard)
   # Example: wildcard is *.example.org → "app.example.org" is covered, "dicom.other.org" is not
@@ -15,11 +15,24 @@ locals {
     if !anytrue([for base in var.external_tls_base_domains : endswith(domain, ".${base}") || domain == base])
   ] : local.all_domains
 
+  # One Certificate per domain so a failed renewal only affects that domain
+  certificate_names = {
+    for domain in local.certmanager_domains :
+    domain => "${var.org}-${var.app}-${var.environment}-${replace(lower(domain), "/[^a-z0-9-]/", "-")}"
+  }
+  domain_certificates = {
+    for domain, name in local.certificate_names : domain => {
+      name       = name
+      secretName = "${name}-tls"
+      dnsNames   = [domain]
+    }
+  }
+
   # Gateway TLS: list of K8s Secret names to attach to the HTTPS listener
-  gateway_certificate_refs = compact([
-    local.use_external_tls ? local.external_tls_secret_name : "",
-    length(local.certmanager_domains) > 0 ? local.certmanager_tls_secret_name : "",
-  ])
+  gateway_certificate_refs = concat(
+    local.use_external_tls ? [local.external_tls_secret_name] : [],
+    [for cert in values(local.domain_certificates) : cert.secretName],
+  )
 
   gateway_values = {
     gateway = {
@@ -45,19 +58,13 @@ locals {
     }
     certmanager = {
       enabled = true
-      clusterIssuer = {
-        name                 = "letsencrypt-prod"
-        server               = "https://acme-v02.api.letsencrypt.org/directory"
-        privateKeySecretName = "letsencrypt-prod-account-key"
+      clusterIssuer = merge(local.acme_issuer, {
+        email = var.acme_email
         solver = {
           httpSectionName = "http"
         }
-      }
-      certificate = {
-        name       = "${var.org}-${var.app}-${var.environment}-gateway-cert"
-        secretName = local.certmanager_tls_secret_name
-        dnsNames   = local.certmanager_domains
-      }
+      })
+      certificates = values(local.domain_certificates)
     }
   }
 
