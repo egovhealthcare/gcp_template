@@ -32,10 +32,28 @@ locals {
     ]))
   }
 
-  gateway_name                = "care-regional-gateway"
-  certmanager_tls_secret_name = "${var.org}-${var.app}-${var.environment}-gateway-tls"
-  external_tls_secret_name    = "${var.org}-${var.app}-${var.environment}-external-tls"
-  use_external_tls            = var.external_tls_cert != null
+  gateway_name                   = "care-regional-gateway"
+  legacy_gateway_tls_secret_name = "${var.org}-${var.app}-${var.environment}-gateway-tls"
+  external_tls_secret_name       = "${var.org}-${var.app}-${var.environment}-external-tls"
+  # nonsensitive so it can drive for_each
+  use_external_tls = nonsensitive(var.external_tls_cert != null)
+
+  acme_issuer = {
+    letsencrypt = {
+      name                        = "letsencrypt-prod"
+      server                      = "https://acme-v02.api.letsencrypt.org/directory"
+      privateKeySecretName        = "letsencrypt-prod-account-key"
+      disableAccountKeyGeneration = false
+    }
+    google = {
+      name                        = "google-public-ca"
+      server                      = "https://dv.acme-v02.api.pki.goog/directory"
+      privateKeySecretName        = "google-public-ca-account-key"
+      disableAccountKeyGeneration = true
+    }
+  }[var.tls_certificate_issuer]
+
+  acme_account_private_key = try(data.terraform_remote_state.infra.outputs.acme_account_private_key, null)
 
   # Null when the infra state predates these outputs; the precondition on
   # kubernetes_secret.care_backend turns that into a readable error.

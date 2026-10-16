@@ -156,6 +156,13 @@ the key is always provisioned, at least one web, API, or additional reCAPTCHA do
 | `snowstorm_deployment_url` | `string` | `"https://terminology.10bedicu.in/fhir"` | `"https://terminology.example.org/fhir"` |
 | `metabase_encryption_secret_key_override` | `string` | `null` | `null` |
 | `recaptcha_additional_domains` | `list(string)` | `[]` | `["login.example.org"]` |
+| `tls_certificate_issuer` | `string` | `"letsencrypt"` | `"google"` |
+| `acme_email` | `string` | `null` | `"devops@example.org"` (required for `"google"`) |
+
+`tls_certificate_issuer = "google"` issues certificates from Google Public CA instead of Let's Encrypt
+(needed when a domain's CAA record only allows `pki.goog`). Apply `pre-infra/`, `infra/`, then `deploy/`.
+The principal applying `infra/` needs `roles/publicca.externalAccountKeyCreator`. `infra/` registers the
+ACME account in the same apply, so the 7-day EAB expiry does not apply between `infra/` and `deploy/`. See `AGENTS.md` for details.
 
 ### Naming Overrides
 

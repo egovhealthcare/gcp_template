@@ -574,6 +574,28 @@ variable "external_tls_base_domains" {
   }
 }
 
+variable "tls_certificate_issuer" {
+  description = "Certificate authority cert-manager uses for Gateway certificates: \"letsencrypt\" or \"google\" (Google Trust Services). With \"google\", infra/ registers the ACME account."
+  type        = string
+  default     = "letsencrypt"
+
+  validation {
+    condition     = contains(["letsencrypt", "google"], var.tls_certificate_issuer)
+    error_message = "tls_certificate_issuer must be \"letsencrypt\" or \"google\"."
+  }
+}
+
+variable "acme_email" {
+  description = "Contact email for the ACME account. Required by Google Public CA; optional for Let's Encrypt."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.tls_certificate_issuer != "google" || var.acme_email != null
+    error_message = "acme_email is required when tls_certificate_issuer is \"google\"."
+  }
+}
+
 # --- reCAPTCHA ---
 
 variable "enable_recaptcha" {
