@@ -1,9 +1,5 @@
 # The EAB key expires 7 days after creation, so the account is registered in
 # the same apply and cert-manager reuses its key instead of the EAB key.
-#
-# The account only changes when the account key does. To start over (or if a
-# registration failed and the EAB key has since expired), run:
-#   tofu apply -replace='tls_private_key.acme_account[0]'
 
 locals {
   use_google_public_ca = var.tls_certificate_issuer == "google"
@@ -29,7 +25,6 @@ resource "google_public_ca_external_account_key" "acme" {
   }
 }
 
-# Destroying this deactivates the account at Google
 resource "acme_registration" "google" {
   count = local.use_google_public_ca ? 1 : 0
 
@@ -42,9 +37,8 @@ resource "acme_registration" "google" {
   }
 
   lifecycle {
-    # Every argument forces a replacement, which deactivates the account and
-    # cannot re-register with the same key. cert-manager updates the contact
-    # email on the existing account from the ClusterIssuer instead.
+    # Replacing deactivates the account, and its key cannot register again.
+    # cert-manager updates the contact email from the ClusterIssuer instead.
     ignore_changes = [email_address, external_account_binding]
   }
 }

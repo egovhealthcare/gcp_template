@@ -83,7 +83,7 @@ certmanager:
     privateKeySecretName: "letsencrypt-prod-account-key"
     # ACME account contact; required for Google Public CA
     email: ""
-    # Required for Google Public CA (account key comes from infra/)
+    # Required for Google Public CA
     disableAccountKeyGeneration: false
     solver:
       httpSectionName: "http"

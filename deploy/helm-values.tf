@@ -15,7 +15,6 @@ locals {
     if !anytrue([for base in var.external_tls_base_domains : endswith(domain, ".${base}") || domain == base])
   ] : local.all_domains
 
-  # One Certificate per domain so a failed renewal only affects that domain
   certificate_names = {
     for domain in local.certmanager_domains :
     domain => "${var.org}-${var.app}-${var.environment}-${replace(lower(domain), "/[^a-z0-9-]/", "-")}"

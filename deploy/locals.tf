@@ -38,7 +38,6 @@ locals {
   # nonsensitive so it can drive for_each
   use_external_tls = nonsensitive(var.external_tls_cert != null)
 
-  # Switching CA renames the ClusterIssuer, which makes cert-manager reissue every certificate
   acme_issuer = {
     letsencrypt = {
       name                        = "letsencrypt-prod"
