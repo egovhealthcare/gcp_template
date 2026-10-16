@@ -1,0 +1,22 @@
+{{- if .Values.celeryFlower.enabled }}
+# Scraped by Google Managed Service for Prometheus, same as care_metrics_exporter.
+# Flower's /metrics handler is not behind its basic auth, so no credentials are
+# needed. Metrics land in Cloud Monitoring as prometheus.googleapis.com/flower_*.
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: {{ include "care-be.fullname" . }}-celery-flower
+  labels:
+    {{- include "care-be.labels" . | nindent 4 }}
+    app.kubernetes.io/component: celery-flower
+spec:
+  selector:
+    matchLabels:
+      {{- include "care-be.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: celery-flower
+  endpoints:
+    - port: flower
+      path: /metrics
+      interval: 30s
+      timeout: 10s
+{{- end }}

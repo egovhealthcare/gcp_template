@@ -95,6 +95,19 @@ celeryBeat:
       cpu: 150m
       memory: 250Mi
 
+# Celery Flower configuration (internal only, never exposed through the Gateway)
+celeryFlower:
+  enabled: false
+  podAnnotations: {}
+  resources:
+    limits:
+      # No CPU limit: Flower is a low-traffic monitoring UI and throttling it
+      # only makes the page slow. Memory stays capped.
+      memory: 512Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+
 # Migration Job configuration
 migrationJob:
   enabled: false
