@@ -9,7 +9,7 @@ module "gke_cluster" {
   zones               = [var.zone]
   network             = module.vpc.network_name
   subnetwork          = local.gke_subnet_name
-  deletion_protection = false
+  deletion_protection = true
   ip_range_pods       = google_compute_global_address.pods_range.name
   cluster_resource_labels = {
     billing = "gke-cluster"
