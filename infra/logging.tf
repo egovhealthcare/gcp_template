@@ -46,7 +46,7 @@ resource "google_logging_project_sink" "default" {
     "NOT LOG_ID(\"externalaudit.googleapis.com/access_transparency\")",
   ])
 
-  unique_writer_identity = false
+  unique_writer_identity = true
 }
 
 moved {
