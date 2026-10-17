@@ -138,6 +138,10 @@ Additionally, `cert-manager` (`v1.19.4` from `https://charts.jetstack.io`) is in
 
 `care_metrics_exporter` uses Google Managed Service for Prometheus. Its chart creates a native `monitoring.googleapis.com/v1` `PodMonitoring`; do not replace it with a Prometheus Operator `ServiceMonitor`. The exporter receives only `CELERY_BROKER_URL` from the CARE backend Secret.
 
+### Logging (data residency)
+
+`infra/logging.tf` keeps logs in India by repointing the built-in `_Default` sink (adopted with an `import` block) to a CMEK-encrypted log bucket in `var.region`, encrypted with `logs-key` from `KMS/`. Every non-audit log (GKE, Cloud SQL, load balancer, Cloud Armor, VPC flow logs) lands there. The `_Required` bucket (Admin Activity / System Event audit logs) stays in `global`; GCP does not allow changing it. Load balancer request logging is enabled at 100% in each chart's `GCPBackendPolicy`. `sampleRate` is an integer out of 1,000,000, not a fraction.
+
 ### External TLS Certificates
 
 Optional variables allow injecting a wildcard TLS certificate instead of relying entirely on cert-manager:
