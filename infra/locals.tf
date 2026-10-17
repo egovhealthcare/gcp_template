@@ -37,6 +37,9 @@ locals {
   nat_ip_address_name      = coalesce(var.nat_ip_address_name, "nat-ip-${var.app}-${var.environment}")
   proxy_only_subnet_name   = coalesce(var.proxy_only_subnet_name, "proxy-only-subnet-${var.app}-${var.environment}")
 
+  logging_bucket_id = "${var.org}-${var.app}-${var.environment}-logging"
+  logs_kms_key_id   = "projects/${var.project_id}/locations/${var.region}/keyRings/${var.org}-${var.app}-${var.environment}-keyring/cryptoKeys/logs-key"
+
   enable_legacy_ingress = var.enable_legacy_ingress
 
   cors_origins = [for domain in var.web_domain_name : "https://${domain}"]
