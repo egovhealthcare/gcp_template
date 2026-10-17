@@ -13,12 +13,22 @@ resource "helm_release" "gateway" {
   depends_on = [
     kubernetes_namespace.care_namespace,
     helm_release.cert_manager,
-    kubernetes_secret.gateway_tls_placeholder,
+    kubernetes_secret.domain_tls_placeholder,
     kubernetes_secret.external_tls,
+    kubernetes_secret.acme_account_key,
   ]
 
   lifecycle {
     ignore_changes = [metadata]
+
+    precondition {
+      condition     = length(local.gateway_certificate_refs) <= 15
+      error_message = "The HTTPS listener supports at most 15 certificates, one per domain plus the external one. Got ${length(local.gateway_certificate_refs)}."
+    }
+    precondition {
+      condition     = length(distinct(values(local.certificate_names))) == length(local.certificate_names)
+      error_message = "Two domains map to the same certificate name (dots and dashes both become \"-\"). Rename one of them."
+    }
   }
 }
 
@@ -222,9 +232,32 @@ resource "tls_self_signed_cert" "gateway_placeholder" {
   ]
 }
 
-resource "kubernetes_secret" "gateway_tls_placeholder" {
+# Placeholders copy the old multi-domain Secret when it exists, so HTTPS stays
+# valid until cert-manager issues the per-domain certificates.
+data "kubernetes_resources" "legacy_gateway_tls" {
+  api_version    = "v1"
+  kind           = "Secret"
+  namespace      = local.namespace_name
+  field_selector = "metadata.name=${local.legacy_gateway_tls_secret_name}"
+}
+
+locals {
+  legacy_gateway_tls = try(data.kubernetes_resources.legacy_gateway_tls.objects[0].data, null)
+
+  placeholder_tls = local.legacy_gateway_tls != null ? {
+    "tls.crt" = base64decode(local.legacy_gateway_tls["tls.crt"])
+    "tls.key" = base64decode(local.legacy_gateway_tls["tls.key"])
+    } : {
+    "tls.crt" = tls_self_signed_cert.gateway_placeholder.cert_pem
+    "tls.key" = tls_private_key.gateway_placeholder.private_key_pem
+  }
+}
+
+resource "kubernetes_secret" "domain_tls_placeholder" {
+  for_each = local.domain_certificates
+
   metadata {
-    name      = local.certmanager_tls_secret_name
+    name      = each.value.secretName
     namespace = local.namespace_name
     annotations = {
       "cert-manager.io/placeholder" = "true"
@@ -232,15 +265,40 @@ resource "kubernetes_secret" "gateway_tls_placeholder" {
   }
 
   type = "kubernetes.io/tls"
-
-  data = {
-    "tls.crt" = tls_self_signed_cert.gateway_placeholder.cert_pem
-    "tls.key" = tls_private_key.gateway_placeholder.private_key_pem
-  }
+  data = local.placeholder_tls
 
   lifecycle {
     ignore_changes = all
   }
 
   depends_on = [kubernetes_namespace.care_namespace]
+}
+
+# Keep the old multi-domain Secret in the cluster; it seeds the placeholders
+removed {
+  from = kubernetes_secret.gateway_tls_placeholder
+
+  lifecycle {
+    destroy = false
+  }
+}
+
+resource "kubernetes_secret" "acme_account_key" {
+  count = var.tls_certificate_issuer == "google" ? 1 : 0
+
+  metadata {
+    name      = local.acme_issuer.privateKeySecretName
+    namespace = helm_release.cert_manager.namespace
+  }
+
+  data = {
+    "tls.key" = local.acme_account_private_key
+  }
+
+  lifecycle {
+    precondition {
+      condition     = local.acme_account_private_key != null
+      error_message = "tls_certificate_issuer is \"google\" but infra/ has no ACME account yet. Apply pre-infra/ and infra/ first."
+    }
+  }
 }

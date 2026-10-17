@@ -196,3 +196,11 @@ nat_ip_address_name      = "nat-ip-example-app-staging"
 # external_tls_cert         = file("path/to/wildcard.pem")
 # external_tls_key          = file("path/to/wildcard.key")
 # external_tls_base_domains = ["example.org"]
+
+# Certificate authority for cert-manager: "letsencrypt" or "google" (Google Public CA).
+# Use "google" when a domain's CAA record only allows pki.goog. Apply pre-infra/, infra/,
+# then deploy/ after changing it. Every certificate is reissued on a switch.
+tls_certificate_issuer = "letsencrypt"
+
+# ACME account contact email. Required when tls_certificate_issuer = "google".
+# acme_email = "devops@example.org"
