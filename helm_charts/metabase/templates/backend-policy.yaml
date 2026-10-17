@@ -13,7 +13,7 @@ spec:
       drainingTimeoutSec: {{ .Values.backendPolicy.drainingTimeoutSec }}
     logging:
       enabled: true
-      sampleRate: 1000000 # 100%
+      sampleRate: 1000000
   targetRef:
     group: ""
     kind: Service

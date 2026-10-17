@@ -1,5 +1,5 @@
-# Repoints the _Default sink to a regional CMEK bucket. The _Required bucket
-# (Admin Activity / System Event audit logs) stays in `global`; GCP does not allow changing it.
+# Repoint the _Default sink to a regional bucket so logs stay in var.region.
+# _Required (Admin Activity audit logs) stays global; GCP does not allow changing it.
 
 resource "google_logging_project_bucket_config" "regional" {
   project        = var.project_id
@@ -14,7 +14,6 @@ resource "google_logging_project_bucket_config" "regional" {
   depends_on = [google_kms_crypto_key_iam_member.logging_sa_logs]
 }
 
-# Reading the CMEK settings provisions the Cloud Logging service account.
 data "google_logging_project_cmek_settings" "default" {
   project = var.project_id
 }
@@ -25,7 +24,6 @@ resource "google_kms_crypto_key_iam_member" "logging_sa_logs" {
   member        = "serviceAccount:${data.google_logging_project_cmek_settings.default.service_account_id}"
 }
 
-# The _Default sink always exists, so adopt it instead of creating it.
 import {
   to = google_logging_project_sink.default
   id = "projects/${var.project_id}/sinks/_Default"
@@ -36,7 +34,6 @@ resource "google_logging_project_sink" "default" {
   project     = var.project_id
   destination = "logging.googleapis.com/${google_logging_project_bucket_config.regional.id}"
 
-  # Same filter GCP sets on _Default (everything except _Required audit logs).
   filter = join(" AND ", [
     "NOT LOG_ID(\"cloudaudit.googleapis.com/activity\")",
     "NOT LOG_ID(\"externalaudit.googleapis.com/activity\")",
@@ -46,6 +43,7 @@ resource "google_logging_project_sink" "default" {
     "NOT LOG_ID(\"externalaudit.googleapis.com/access_transparency\")",
   ])
 
+  # The API rejects changing an existing sink from true to false.
   unique_writer_identity = true
 }
 
