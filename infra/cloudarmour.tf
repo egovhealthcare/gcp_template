@@ -14,7 +14,7 @@ resource "google_compute_region_ssl_policy" "care_ssl_policy" {
   region          = var.region
   project         = var.project_id
   min_tls_version = "TLS_1_2"
-  profile         = "MODERN"
+  profile         = "RESTRICTED"
 }
 
 resource "google_compute_region_security_policy" "care" {

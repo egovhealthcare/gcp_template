@@ -63,7 +63,7 @@ resource "google_compute_ssl_policy" "care_ssl_policy" {
   count           = local.enable_legacy_ingress ? 1 : 0
   name            = "care-ssl-policy"
   min_tls_version = "TLS_1_2"
-  profile         = "MODERN"
+  profile         = "RESTRICTED"
 }
 
 # --- BackendConfig resources ---
