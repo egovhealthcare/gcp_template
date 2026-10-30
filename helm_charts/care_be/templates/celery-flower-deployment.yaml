@@ -1,0 +1,99 @@
+{{- if .Values.celeryFlower.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "care-be.fullname" . }}-celery-flower
+  labels:
+    {{- include "care-be.labels" . | nindent 4 }}
+    app.kubernetes.io/component: celery-flower
+spec:
+  strategy:
+    {{- toYaml (.Values.celeryFlower.strategy | default (dict "type" "RollingUpdate")) | nindent 4 }}
+  # Flower holds task/event history in process memory. More than one replica
+  # behind the Service returns a different partial view per request, so this is
+  # intentionally not configurable.
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "care-be.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: celery-flower
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.celeryFlower.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "care-be.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: celery-flower
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "care-be.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-celery-flower
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ include "care-be.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Entrypoint from the care_celery_flower plug; it listens on FLOWER_PORT,
+          # which defaults to 5555 in the plug.
+          command:
+            - start-flower
+          ports:
+            - name: flower
+              containerPort: 5555
+              protocol: TCP
+          {{- with include "care-be.envBlocks" . | trim }}{{ . | nindent 10 }}{{ end }}
+          # /healthcheck is not behind Flower's basic auth.
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: flower
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: flower
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            {{- toYaml .Values.celeryFlower.resources | nindent 12 }}
+          volumeMounts:
+            - name: production-logging
+              mountPath: /app/config/settings/production_logging.py
+              subPath: production_logging.py
+              readOnly: true
+          {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: production-logging
+          configMap:
+            name: {{ include "care-be.fullname" . }}-production-logging
+      {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
