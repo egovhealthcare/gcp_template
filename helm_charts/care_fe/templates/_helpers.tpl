@@ -59,3 +59,27 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
+
+{{/*
+Build the Content-Security-Policy value. Origins listed in
+.Values.httpRoute.csp.allowedHosts are added to script-src, style-src and
+worker-src (the directives that gate code execution); everything else is
+already open to any https: origin.
+*/}}
+{{- define "care-fe.csp" -}}
+{{- $hosts := join " " (.Values.httpRoute.csp.allowedHosts | default list) -}}
+{{- $hosts = ternary "" (printf " %s" $hosts) (eq $hosts "") -}}
+default-src 'self' https: data: blob:;
+{{- printf " script-src 'self' 'unsafe-inline' 'unsafe-eval'%s;" $hosts }}
+{{- printf " style-src 'self' 'unsafe-inline'%s;" $hosts }}
+{{- printf " worker-src 'self' blob:%s;" $hosts }}
+{{- " img-src 'self' data: blob: https:;" }}
+{{- " connect-src 'self' https: wss:;" }}
+{{- " font-src 'self' data: https:;" }}
+{{- " frame-src 'self' https:;" }}
+{{- " object-src 'self' blob: https:;" }}
+{{- " frame-ancestors 'self';" }}
+{{- " base-uri 'self';" }}
+{{- " form-action 'self' https:;" }}
+{{- " upgrade-insecure-requests" }}
+{{- end }}

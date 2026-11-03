@@ -124,6 +124,13 @@ helm_config = {
       requests = { cpu = "25m", memory = "64Mi" }
       limits   = { cpu = null, memory = "256Mi" }
     }
+    # Origins the CSP allows to serve scripts/styles/workers. Replaces the
+    # default list in variables.tf; api/dicom domains are added automatically.
+    # csp_allowed_hosts = [
+    #   "https://*.pages.dev",
+    #   "https://www.google.com",
+    #   "https://www.gstatic.com",
+    # ]
     # Optional: override the Gateway-set security headers (defaults in
     # helm_charts/care_fe/values.yaml). Only the keys given here change.
     # response_headers = {

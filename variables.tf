@@ -270,6 +270,18 @@ variable "helm_config" {
       # header names; set a value to "" to drop that header from the filter.
       response_headers        = optional(map(string))
       remove_response_headers = optional(list(string))
+      # Origins allowed by the CSP to serve scripts/styles/workers (plug CDNs,
+      # reCAPTCHA). api_domain_name and dicom_domain_name are added automatically.
+      csp_allowed_hosts = optional(list(string), [
+        "https://*.pages.dev",
+        "https://*.github.io",
+        "https://*.ohc.network",
+        "https://*.10bedicu.in",
+        "https://*.10bedicu.org",
+        "https://www.google.com",
+        "https://www.gstatic.com",
+        "https://www.recaptcha.net",
+      ])
     })
     metabase = optional(object({
       repository    = optional(string, "metabase/metabase")

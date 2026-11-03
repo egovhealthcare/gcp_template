@@ -219,7 +219,15 @@ locals {
         tag        = var.helm_config.care_frontend.tag
       }
       httpRoute = merge(
-        { hostnames = var.web_domain_name },
+        {
+          hostnames = var.web_domain_name
+          csp = {
+            allowedHosts = distinct(concat(
+              [for d in concat(var.api_domain_name, var.dicom_domain_name) : "https://${d}"],
+              var.helm_config.care_frontend.csp_allowed_hosts,
+            ))
+          }
+        },
         var.helm_config.care_frontend.response_headers != null || var.helm_config.care_frontend.remove_response_headers != null ? {
           responseHeaders = merge(
             var.helm_config.care_frontend.response_headers != null ? { set = var.helm_config.care_frontend.response_headers } : {},
