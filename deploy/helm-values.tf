@@ -218,9 +218,15 @@ locals {
         repository = var.helm_config.care_frontend.repository
         tag        = var.helm_config.care_frontend.tag
       }
-      httpRoute = {
-        hostnames = var.web_domain_name
-      }
+      httpRoute = merge(
+        { hostnames = var.web_domain_name },
+        var.helm_config.care_frontend.response_headers != null || var.helm_config.care_frontend.remove_response_headers != null ? {
+          responseHeaders = merge(
+            var.helm_config.care_frontend.response_headers != null ? { set = var.helm_config.care_frontend.response_headers } : {},
+            var.helm_config.care_frontend.remove_response_headers != null ? { remove = var.helm_config.care_frontend.remove_response_headers } : {},
+          )
+        } : {}
+      )
     },
     var.helm_config.care_frontend.resources != null ? { resources = var.helm_config.care_frontend.resources } : {}
   )

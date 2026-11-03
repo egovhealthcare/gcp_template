@@ -124,6 +124,12 @@ helm_config = {
       requests = { cpu = "25m", memory = "64Mi" }
       limits   = { cpu = null, memory = "256Mi" }
     }
+    # Optional: override the Gateway-set security headers (defaults in
+    # helm_charts/care_fe/values.yaml). Only the keys given here change.
+    # response_headers = {
+    #   "Cross-Origin-Embedder-Policy" = ""   # "" drops the header
+    # }
+    # remove_response_headers = ["Content-Security-Policy-Report-Only"]
   }
   metabase = {
     repository    = "metabase/metabase"

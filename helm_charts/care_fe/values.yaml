@@ -109,3 +109,28 @@ httpRoute:
   gatewayName: "{{ .Values.global.gateway.name }}"
   annotations: {}
   hostnames: []
+  # Security headers set at the Gateway via an HTTPRoute ResponseHeaderModifier.
+  # Values are templated (tpl), so hostnames can reference .Values. Set a header to
+  # "" (or null) to drop it from the filter; list names under `remove` to strip
+  # headers emitted by the backend (e.g. the Report-Only CSP baked into the image).
+  responseHeaders:
+    set:
+      Content-Security-Policy: >-
+        default-src 'self' https: data: blob:;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.pages.dev https://*.github.io https://*.ohc.network https://*.10bedicu.in https://*.10bedicu.org https://www.google.com https://www.gstatic.com https://www.recaptcha.net;
+        style-src 'self' 'unsafe-inline' https://*.pages.dev https://*.github.io https://*.ohc.network https://*.10bedicu.in https://*.10bedicu.org;
+        img-src 'self' data: blob: https:;
+        connect-src 'self' https: wss:;
+        font-src 'self' data: https:;
+        worker-src 'self' blob: https://*.pages.dev https://*.github.io https://*.ohc.network https://*.10bedicu.in https://*.10bedicu.org;
+        frame-src 'self' https:;
+        object-src 'self' blob: https:;
+        frame-ancestors 'self';
+        base-uri 'self';
+        form-action 'self' https:;
+        upgrade-insecure-requests
+      Cross-Origin-Opener-Policy: same-origin-allow-popups
+      Cross-Origin-Resource-Policy: same-site
+      Cross-Origin-Embedder-Policy: unsafe-none
+    remove:
+      - Content-Security-Policy-Report-Only

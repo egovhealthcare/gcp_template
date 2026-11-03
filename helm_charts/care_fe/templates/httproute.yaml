@@ -22,6 +22,26 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      {{- $set := .Values.httpRoute.responseHeaders.set | default dict }}
+      {{- $remove := .Values.httpRoute.responseHeaders.remove | default list }}
+      {{- if or $set $remove }}
+      filters:
+        - type: ResponseHeaderModifier
+          responseHeaderModifier:
+            {{- with $set }}
+            set:
+              {{- range $name, $value := . }}
+              {{- if $value }}
+              - name: {{ $name | quote }}
+                value: {{ tpl $value $ | quote }}
+              {{- end }}
+              {{- end }}
+            {{- end }}
+            {{- with $remove }}
+            remove:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+      {{- end }}
       backendRefs:
         - name: {{ include "care-fe.fullname" . }}
           port: {{ .Values.service.port }}

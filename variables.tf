@@ -265,6 +265,11 @@ variable "helm_config" {
       tag           = string
       replica_count = optional(number, 2)
       resources     = optional(any)
+      # Per-env overrides for the security headers set on the FE HTTPRoute
+      # (chart defaults live in helm_charts/care_fe/values.yaml). Keys are
+      # header names; set a value to "" to drop that header from the filter.
+      response_headers        = optional(map(string))
+      remove_response_headers = optional(list(string))
     })
     metabase = optional(object({
       repository    = optional(string, "metabase/metabase")
