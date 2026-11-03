@@ -74,19 +74,21 @@ httpRedirect:
   scheme: "https"
   statusCode: 301
 
-# cert-manager: ClusterIssuer + Certificate for Let's Encrypt TLS
+# cert-manager: ACME ClusterIssuer (Let's Encrypt or Google Public CA) + one Certificate per domain
 certmanager:
   enabled: false
   clusterIssuer:
     name: "letsencrypt-prod"
     server: "https://acme-v02.api.letsencrypt.org/directory"
     privateKeySecretName: "letsencrypt-prod-account-key"
+    # ACME account contact; required for Google Public CA
+    email: ""
+    # Required for Google Public CA
+    disableAccountKeyGeneration: false
     solver:
       httpSectionName: "http"
-  certificate:
-    name: "care-gateway-cert"
-    secretName: "care-gateway-tls"
-    dnsNames: []
+  # Each entry: { name, secretName, dnsNames: [...] }
+  certificates: []
 
 # Name override
 nameOverride: ""
