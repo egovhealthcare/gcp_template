@@ -65,6 +65,7 @@ enable_cloud_armor    = true
 enable_github_wif     = false
 enable_scribe         = false
 enable_jumphost       = true
+enable_celery_flower  = false
 enable_recaptcha      = false
 
 # reCAPTCHA. The key is always provisioned by infra/; enable_recaptcha only controls
