@@ -76,7 +76,7 @@ default-src 'self' https: data: blob:;
 {{- " img-src 'self' data: blob: https:;" }}
 {{- " connect-src 'self' https: wss:;" }}
 {{- " font-src 'self' data: https:;" }}
-{{- " frame-src 'self' https:;" }}
+{{- " frame-src 'self' blob: https:;" }}
 {{- " object-src 'self' blob: https:;" }}
 {{- " frame-ancestors 'self';" }}
 {{- " base-uri 'self';" }}
