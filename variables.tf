@@ -274,7 +274,7 @@ variable "helm_config" {
     })
     metabase = optional(object({
       repository    = optional(string, "metabase/metabase")
-      tag           = optional(string, "v0.63.13")
+      tag           = optional(string, "v0.64.6.3") # Metabase 64 LTS: bump to the release that v0.64-lts points to on Docker Hub
       replica_count = optional(number, 1)
       resources     = optional(any)
     }), {})

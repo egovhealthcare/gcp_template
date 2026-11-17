@@ -128,7 +128,7 @@ helm_config = {
   }
   metabase = {
     repository    = "metabase/metabase"
-    tag           = "v0.63.13"
+    tag           = "v0.64.6.3"
     replica_count = 1
     resources = {
       requests = { cpu = "50m", memory = "2Gi" }
