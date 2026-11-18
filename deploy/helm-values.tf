@@ -232,9 +232,23 @@ locals {
         repository = var.helm_config.care_frontend.repository
         tag        = var.helm_config.care_frontend.tag
       }
-      httpRoute = {
-        hostnames = var.web_domain_name
-      }
+      httpRoute = merge(
+        {
+          hostnames = var.web_domain_name
+          csp = {
+            allowedHosts = distinct(concat(
+              [for d in concat(var.web_domain_name, var.api_domain_name, var.dicom_domain_name) : "https://${d}"],
+              var.helm_config.care_frontend.csp_allowed_hosts,
+            ))
+          }
+        },
+        var.helm_config.care_frontend.response_headers != null || var.helm_config.care_frontend.remove_response_headers != null ? {
+          responseHeaders = merge(
+            var.helm_config.care_frontend.response_headers != null ? { set = var.helm_config.care_frontend.response_headers } : {},
+            var.helm_config.care_frontend.remove_response_headers != null ? { remove = var.helm_config.care_frontend.remove_response_headers } : {},
+          )
+        } : {}
+      )
     },
     var.helm_config.care_frontend.resources != null ? { resources = var.helm_config.care_frontend.resources } : {}
   )
