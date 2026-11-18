@@ -126,7 +126,7 @@ helm_config = {
       limits   = { cpu = null, memory = "256Mi" }
     }
     # Origins the CSP allows to serve scripts/styles/workers. Replaces the
-    # default list in variables.tf; api/dicom domains are added automatically.
+    # default list in variables.tf; web/api/dicom domains are added automatically.
     # csp_allowed_hosts = [
     #   "https://*.pages.dev",
     #   "https://www.google.com",

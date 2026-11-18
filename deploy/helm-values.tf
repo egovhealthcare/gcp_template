@@ -237,7 +237,7 @@ locals {
           hostnames = var.web_domain_name
           csp = {
             allowedHosts = distinct(concat(
-              [for d in concat(var.api_domain_name, var.dicom_domain_name) : "https://${d}"],
+              [for d in concat(var.web_domain_name, var.api_domain_name, var.dicom_domain_name) : "https://${d}"],
               var.helm_config.care_frontend.csp_allowed_hosts,
             ))
           }
