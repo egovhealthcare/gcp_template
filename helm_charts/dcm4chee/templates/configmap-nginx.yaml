@@ -6,6 +6,13 @@ metadata:
     {{- include "dcm4chee.labels" . | nindent 4 }}
 data:
   default.conf.template: |
+    map $http_origin $cors_allow_origin {
+      default "";
+      {{- range .Values.httpRoute.hostnames }}
+      "https://{{ . }}" $http_origin;
+      {{- end }}
+    }
+
     server {
       gzip_static  always;
       gzip_proxied expired no-cache no-store private auth;
@@ -23,10 +30,11 @@ data:
         index  index.html index.htm;
         try_files $uri $uri/ /index.html;
         add_header Cross-Origin-Resource-Policy same-origin;
-        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Origin' $cors_allow_origin always;
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
-        add_header 'Access-Control-Allow-Headers' '*' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, Accept' always;
         add_header 'Access-Control-Allow-Credentials' 'true' always;
+        add_header 'Vary' 'Origin' always;
       }
 
       # DCM4CHE Server
@@ -35,10 +43,11 @@ data:
           return 204;
         }
         auth_request /authenticate;
-        add_header 'Access-Control-Allow-Origin' '*' always;
+        add_header 'Access-Control-Allow-Origin' $cors_allow_origin always;
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
-        add_header 'Access-Control-Allow-Headers' '*' always;
+        add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, Accept' always;
         add_header 'Access-Control-Allow-Credentials' 'true' always;
+        add_header 'Vary' 'Origin' always;
         proxy_set_header Authorization "";
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
