@@ -89,6 +89,8 @@ nginx:
   # URL of care backend authentication endpoint
   authBackendUrl: "http://care-backend-care-be:9000/api/care_radiology/dicom/authenticate/"
   clientMaxBodySize: "100M"
+  # Hostnames allowed to embed the viewer in an iframe
+  frameAncestors: []
 
 # --- DICOM Configuration ---
 # Base URL for OHIF viewer to access DCM4CHEE (e.g., https://dicom.example.com)

@@ -252,6 +252,7 @@ locals {
     }
     nginx = {
       authBackendUrl = "http://care-backend-care-be.${local.namespace_name}.svc.cluster.local:${local.care_backend_port}/api/care_radiology/dicom/authenticate/"
+      frameAncestors = var.web_domain_name
     }
     httpRoute = {
       hostnames = var.dicom_domain_name
