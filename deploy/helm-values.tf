@@ -261,7 +261,7 @@ locals {
       { name = kubernetes_secret.dcm4chee[0].metadata[0].name }
     ] : []
     }, {
-    for component, values in local.dcm4chee_image_values : component => values if component != "nginx"
+    for component, values in local.dcm4chee_image_values : component => values
   })
 
 }
