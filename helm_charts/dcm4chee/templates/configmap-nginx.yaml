@@ -13,7 +13,22 @@ data:
       {{- end }}
     }
 
+    map $request_uri $masked_request_uri {
+      default $request_uri;
+      "~^(?<prefix>.*[?&]token=)[^&]*(?<suffix>.*)$" "${prefix}REDACTED${suffix}";
+    }
+
+    map $http_referer $masked_http_referer {
+      default $http_referer;
+      "~^(?<prefix>.*[?&]token=)[^&]*(?<suffix>.*)$" "${prefix}REDACTED${suffix}";
+    }
+
+    log_format masked '$remote_addr - $remote_user [$time_local] "$request_method $masked_request_uri $server_protocol" '
+                      '$status $body_bytes_sent "$masked_http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
     server {
+      access_log /var/log/nginx/access.log masked;
       gzip_static  always;
       gzip_proxied expired no-cache no-store private auth;
       gunzip       on;
