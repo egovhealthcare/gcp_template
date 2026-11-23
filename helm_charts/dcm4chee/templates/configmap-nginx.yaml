@@ -5,13 +5,6 @@ metadata:
   labels:
     {{- include "dcm4chee.labels" . | nindent 4 }}
 data:
-  # Mounted into the OHIF container over /usr/src/default.conf.template. The
-  # ohif/app and radiology-ohif entrypoints render that file into
-  # /etc/nginx/conf.d/default.conf on start (envsubst on $PORT/$PUBLIC_URL,
-  # neither used here). The static app block mirrors the image default; diff
-  # it when bumping ohif.image.tag.
-  # add_header is set per location because a location with any add_header
-  # does not inherit server-level ones.
   default.conf.template: |
     server {
       gzip_static  always;
@@ -21,7 +14,7 @@ data:
       listen [::]:80 default_server;
       client_max_body_size {{ .Values.nginx.clientMaxBodySize }};
 
-      # OHIF Viewer (static)
+      # OHIF Viewer
       location / {
         if ($request_method = OPTIONS) {
           return 204;
@@ -36,7 +29,7 @@ data:
         add_header 'Access-Control-Allow-Credentials' 'true' always;
       }
 
-      # DCM4CHEE Arc, gated by CARE JWT validation
+      # DCM4CHE Server
       location /dicomweb/ {
         if ($request_method = OPTIONS) {
           return 204;
@@ -53,7 +46,7 @@ data:
         proxy_pass http://{{ include "dcm4chee.fullname" . }}-arc.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.arc.service.port }};
       }
 
-      # CARE authentication subrequest
+      # Authentication Endpoint
       location = /authenticate {
         internal;
         proxy_pass {{ .Values.nginx.authBackendUrl }};

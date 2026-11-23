@@ -66,7 +66,7 @@ ohif:
       cpu: 500m
       memory: 512Mi
 
-# --- DICOMweb auth proxy (served by the OHIF container's nginx) ---
+# --- Nginx Proxy ---
 nginx:
   # URL of care backend authentication endpoint
   authBackendUrl: "http://care-backend-care-be:9000/api/care_radiology/dicom/authenticate/"
