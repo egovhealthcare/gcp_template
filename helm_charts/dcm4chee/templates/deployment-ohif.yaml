@@ -39,6 +39,9 @@ spec:
             - name: ohif-config
               mountPath: /usr/share/nginx/html/app-config.js
               subPath: app-config.js
+            - name: ohif-config
+              mountPath: /usr/src/default.conf.template
+              subPath: default.conf.template
           resources:
             {{- toYaml .Values.ohif.resources | nindent 12 }}
       volumes:

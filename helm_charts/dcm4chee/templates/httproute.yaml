@@ -23,6 +23,6 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: {{ include "dcm4chee.fullname" . }}-nginx
-          port: {{ .Values.nginx.service.port }}
+        - name: {{ include "dcm4chee.fullname" . }}-ohif
+          port: {{ .Values.ohif.service.port }}
 {{- end }}

@@ -296,12 +296,12 @@ variable "helm_config" {
   validation {
     condition = alltrue([
       for component, image in var.helm_config.dcm4chee :
-      contains(["ldap", "arc", "ohif", "nginx", "migration"], component) && alltrue([
+      contains(["ldap", "arc", "ohif", "migration"], component) && alltrue([
         for field, value in image :
         contains(["repository", "tag"], field) && try(trimspace(value) != "", false)
       ])
     ])
-    error_message = "DICOM overrides must use ldap, arc, ohif, nginx, or migration, with only non-empty repository and tag fields."
+    error_message = "DICOM overrides must use ldap, arc, ohif, or migration, with only non-empty repository and tag fields."
   }
 
   validation {

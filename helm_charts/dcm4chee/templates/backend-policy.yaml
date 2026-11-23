@@ -3,7 +3,7 @@
 apiVersion: networking.gke.io/v1
 kind: GCPBackendPolicy
 metadata:
-  name: {{ include "dcm4chee.fullname" . }}-nginx-policy
+  name: {{ include "dcm4chee.fullname" . }}-ohif-policy
   labels:
     {{- include "dcm4chee.labels" . | nindent 4 }}
 spec:
@@ -17,12 +17,12 @@ spec:
   targetRef:
     group: ""
     kind: Service
-    name: {{ include "dcm4chee.fullname" . }}-nginx
+    name: {{ include "dcm4chee.fullname" . }}-ohif
 ---
 apiVersion: networking.gke.io/v1
 kind: HealthCheckPolicy
 metadata:
-  name: {{ include "dcm4chee.fullname" . }}-nginx-health
+  name: {{ include "dcm4chee.fullname" . }}-ohif-health
   labels:
     {{- include "dcm4chee.labels" . | nindent 4 }}
 spec:
@@ -39,5 +39,5 @@ spec:
   targetRef:
     group: ""
     kind: Service
-    name: {{ include "dcm4chee.fullname" . }}-nginx
+    name: {{ include "dcm4chee.fullname" . }}-ohif
 {{- end }}
