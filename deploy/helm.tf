@@ -149,7 +149,7 @@ resource "helm_release" "care_backend" {
   name        = "care-backend"
   chart       = "${path.module}/../helm_charts/care_be"
   namespace   = local.namespace_name
-  timeout     = 420
+  timeout     = 900
   max_history = 10
   # recreate_pods    = true 
   # create_namespace = true
